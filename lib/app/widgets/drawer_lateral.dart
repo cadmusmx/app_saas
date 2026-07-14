@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:gaso_tenant_app/app/router/routes.dart';
+import 'package:gaso_tenant_app/app/widgets/menu_registry.dart';
+import 'package:gaso_tenant_app/core/auth/auth_context.dart';
 import 'package:gaso_tenant_app/core/tenant/tenant_context.dart';
 import 'package:gaso_tenant_app/core/tenant/tenant_storage.dart';
 import 'package:gaso_tenant_app/core/widgets/lists/tiles.dart';
@@ -18,37 +20,12 @@ class DrawerLateral extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _DrawerLateralState extends State<DrawerLateral> {
-  final List<DrawerOption> _options = [
-    DrawerOption(path: AppRoutes.health, title: 'Estado', icon: Icons.medical_services),
-    DrawerOption(path: AppRoutes.profile, title: 'Perfil', icon: Icons.person_sharp),
-    DrawerOption(path: AppRoutes.vacationLeave, title: 'Vacaciones y permisos', icon: Icons.beach_access_sharp),
-    DrawerOption(path: AppRoutes.support, title: 'Soporte técnico', icon: Icons.support_agent),
-  ];
-  final List<DrawerOption> _vehiclesOptions = [
-    DrawerOption(path: AppRoutes.weeklyMileageList, title: 'Kilometraje semanal', icon: Icons.speed_sharp),
-    DrawerOption(
-      path: AppRoutes.fuelRequestList,
-      title: 'Solicitudes de gasolina',
-      icon: Icons.local_gas_station_sharp,
-    ),
-    DrawerOption(path: AppRoutes.vehicleLiabilityList, title: 'Responsivas vehiculares', icon: Icons.fact_check_sharp),
-    DrawerOption(path: AppRoutes.vehicleExpensesList, title: 'Gastos vehiculares', icon: Icons.directions_car),
-  ];
-  final List<DrawerOption> _expensesOptions = [
-    DrawerOption(
-      path: AppRoutes.operationExpensesList,
-      title: 'Gastos de operación',
-      icon: Icons.business_center_sharp,
-    ),
-    DrawerOption(title: 'Gastos de viaje', icon: Icons.flight_sharp, released: false),
-  ];
-  final List<DrawerOption> _warehouseOptions = [
-    DrawerOption(path: AppRoutes.materialValidationList, title: 'Validación de material', icon: Icons.inventory_sharp),
-    DrawerOption(path: AppRoutes.materialLogisticsList, title: 'Logística de material', icon: Icons.move_up_sharp),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthContext>();
+    final groups = groupedMenu(auth); // Map<group, List<MenuItem>> ya filtrado y ORDENADO
+    final user = auth.current;
+
     final ColorScheme colorScheme = ColorScheme.of(context);
     final TextTheme textTheme = TextTheme.of(context);
     return Drawer(
@@ -60,58 +37,69 @@ class _DrawerLateralState extends State<DrawerLateral> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisSize: MainAxisSize.max,
-                  spacing: 8,
-                  children: [
-                    Image.asset("assets/images/logo.png", width: 32, height: 32, color: colorScheme.onPrimary),
-                    Text(
-                      'GASO',
-                      style: textTheme.headlineMedium?.copyWith(
-                        color: colorScheme.onPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                Flexible(
-                  child: Text(
-                    'NOMBRE DE USUARIO',
-                    style: textTheme.bodyMedium?.copyWith(color: colorScheme.onPrimary, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Flexible(
-                  child: Text(
-                    'PUESTO',
-                    style: textTheme.bodyMedium?.copyWith(color: colorScheme.onPrimary),
-                  ),
-                ),
-                SizedBox(height: 32),
                 Consumer<TenantContext>(
                   builder: (_, ctx, _) => Text(
-                    ctx.current?.name.toUpperCase() ?? '',
-                    style: textTheme.bodySmall,
-                    overflow: TextOverflow.ellipsis,
+                    user?.branding.displayName ?? TenantContext.instance.current?.name ?? '',
+                    style: textTheme.titleLarge?.copyWith(color: colorScheme.onPrimary, fontWeight: FontWeight.bold),
                   ),
+                ),
+                Flexible(
+                  child: Text(
+                    (user?.user.name ?? '').toUpperCase(),
+                    style: textTheme.titleMedium?.copyWith(color: colorScheme.onPrimary, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Flexible(
+                  child: Text(
+                    (user?.profile.name ?? '').toUpperCase(),
+                    style: textTheme.titleSmall?.copyWith(color: colorScheme.onPrimary),
+                  ),
+                ),
+                Expanded(child: SizedBox.shrink()),
+                Row(
+                  spacing: 4,
+                  mainAxisSize: MainAxisSize.max,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Image.asset("assets/images/logo.png", width: 16, color: colorScheme.onPrimary),
+                    Text('MULTI-TENANT', style: textTheme.titleSmall?.copyWith(color: colorScheme.onPrimary)),
+                  ],
                 ),
               ],
             ),
           ),
-          ..._options.map((option) => DrawerListTile(option, colorScheme.primary)),
-          ExpansionTile(
-            shape: const Border(),
-            title: Text('FLOTILLAS', style: textTheme.bodyMedium),
-            children: _vehiclesOptions.map((option) => DrawerListTile(option, colorScheme.primary)).toList(),
+          DrawerListTile(
+            DrawerOption(path: AppRoutes.profile, title: 'Perfil', icon: Icons.person_sharp, released: false),
+            colorScheme.primary,
           ),
-          ExpansionTile(
-            shape: const Border(),
-            title: Text('GASTOS', style: textTheme.bodyMedium),
-            children: _expensesOptions.map((option) => DrawerListTile(option, colorScheme.primary)).toList(),
+          ...groups.entries.map(
+            (groupEntry) => groupEntry.value.length == 1
+                ? DrawerListTile(
+                    DrawerOption(
+                      path: groupEntry.value.first.readRoute,
+                      title: groupEntry.value.first.label,
+                      icon: groupEntry.value.first.icon,
+                    ),
+                    colorScheme.primary,
+                  )
+                : ExpansionTile(
+                    shape: const Border(),
+                    title: Text(kGroupLabels[groupEntry.key] ?? 'MÁS OPCIONES', style: textTheme.bodyMedium),
+                    children: groupEntry.value
+                        .map(
+                          (item) => DrawerListTile(
+                            DrawerOption(path: item.readRoute, title: item.label, icon: item.icon),
+                            colorScheme.primary,
+                          ),
+                        )
+                        .toList(),
+                  ),
           ),
-          ExpansionTile(
-            shape: const Border(),
-            title: Text('ALMACÉN', style: textTheme.bodyMedium),
-            children: _warehouseOptions.map((option) => DrawerListTile(option, colorScheme.primary)).toList(),
+          SizedBox(height: 16),
+          DrawerListTile(
+            DrawerOption(path: AppRoutes.support, title: 'Soporte técnico', icon: Icons.support_agent),
+            colorScheme.primary,
           ),
           Consumer<ThemeService>(
             builder: (context, themeService, _) {
@@ -123,7 +111,7 @@ class _DrawerLateralState extends State<DrawerLateral> {
               );
             },
           ),
-          Divider(),
+          Divider(height: 32),
           ListTile(
             title: Text('CAMBIAR EMPRESA', style: textTheme.bodyMedium),
             trailing: Icon(Icons.swap_horiz, color: colorScheme.primary),

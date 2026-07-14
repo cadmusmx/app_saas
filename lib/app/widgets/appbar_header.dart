@@ -4,7 +4,7 @@ import 'package:gaso_tenant_app/features/notifications/presentation/notification
 
 class AppBarHeader extends StatefulWidget implements PreferredSizeWidget {
   final bool showNotifications;
-  final String? title;
+  final String title;
   final List<Widget>? actions;
 
   const AppBarHeader(this.title, {super.key, this.showNotifications = false, this.actions});
@@ -24,6 +24,7 @@ class _AppBarHeaderState extends State<AppBarHeader> {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
     return AppBar(
+      leadingWidth: 32,
       backgroundColor: colorScheme.primary,
       foregroundColor: colorScheme.onPrimary,
       titleTextStyle: textTheme.titleMedium?.copyWith(color: colorScheme.onPrimary),
@@ -31,7 +32,7 @@ class _AppBarHeaderState extends State<AppBarHeader> {
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(child: Text(widget.title?.toUpperCase() ?? '', overflow: TextOverflow.ellipsis, maxLines: 1)),
+          Expanded(child: Text(widget.title.toUpperCase(), overflow: TextOverflow.ellipsis, maxLines: 1)),
           if (widget.showNotifications)
             ValueListenableBuilder<int>(
               valueListenable: _notificationService.notificationCount,
@@ -41,12 +42,7 @@ class _AppBarHeaderState extends State<AppBarHeader> {
                   onPressed: () {
                     Navigator.push(context, MaterialPageRoute<void>(builder: (context) => NotificationsScreen()));
                   },
-                  icon: Badge.count(
-                      count: count,
-                      isLabelVisible: count > 0,
-                      child: count > 0
-                          ? Icon(Icons.notifications)
-                          : Image.asset("assets/images/logo.png", width: 24, height: 24, color: colorScheme.onPrimary)),
+                  icon: Badge.count(count: count, isLabelVisible: count > 0, child: Icon(Icons.notifications)),
                 );
               },
             ),

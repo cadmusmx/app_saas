@@ -1,12 +1,15 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:gaso_tenant_app/app/widgets/appbar_header.dart';
+import 'package:gaso_tenant_app/app/widgets/rbac_gate.dart';
 import 'package:gaso_tenant_app/app/widgets/tenant_gate.dart';
+import 'package:gaso_tenant_app/app/widgets/menu_registry.dart';
 import 'package:gaso_tenant_app/features/auth/presentation/load_screen.dart';
 import 'package:gaso_tenant_app/features/auth/presentation/login_screen.dart';
 import 'package:gaso_tenant_app/features/auth/presentation/mfa_screen.dart';
 import 'package:gaso_tenant_app/features/auth/presentation/mfa_setup_screen.dart';
-import 'package:gaso_tenant_app/features/health/presentation/health_screen.dart';
+import 'package:gaso_tenant_app/features/support/presentation/support_screen.dart';
 import 'package:gaso_tenant_app/features/home/presentation/home_screen.dart';
 
 class AppRoutes {
@@ -18,9 +21,8 @@ class AppRoutes {
   static const String mfa = '/mfa';
   static const String mfaSetup = '/mfa-setup';
 
-  // Protegidas (TenantGate verifica sesión)
+  // Protegidas
   static const String home = '/home';
-  static const String health = '/health';
   static const String profile = '/profile';
   static const String vacationLeave = '/vacation-leave';
   static const String support = '/support';
@@ -87,23 +89,54 @@ final Map<String, WidgetBuilder> appRoutes = {
 
   // Protegidas: TenantGate unificado (verifica sesión; si no → /login)
   AppRoutes.home: (_) => const TenantGate(child: HomeScreen()),
-  AppRoutes.health: (_) => const TenantGate(child: HealthScreen()),
-  AppRoutes.profile: (_) => const TenantGate(child: Text('En proceso')),
-  AppRoutes.vacationLeave: (_) => const TenantGate(child: Text('En proceso')),
-  AppRoutes.support: (_) => const TenantGate(child: Text('En proceso')),
-  AppRoutes.weeklyMileage: (_) => const TenantGate(child: Text('En proceso')),
-  AppRoutes.weeklyMileageList: (_) => const TenantGate(child: Text('En proceso')),
-  AppRoutes.vehicleLiability: (_) => const TenantGate(child: Text('En proceso')),
-  AppRoutes.vehicleLiabilityList: (_) => const TenantGate(child: Text('En proceso')),
-  AppRoutes.fuelRequest: (_) => const TenantGate(child: Text('En proceso')),
-  AppRoutes.fuelRequestList: (_) => const TenantGate(child: Text('En proceso')),
-  AppRoutes.materialValidation: (_) => const TenantGate(child: Text('En proceso')),
-  AppRoutes.materialValidationList: (_) => const TenantGate(child: Text('En proceso')),
-  AppRoutes.materialValidationDetail: (_) => const TenantGate(child: Text('En proceso')),
-  AppRoutes.materialLogistics: (_) => const TenantGate(child: Text('En proceso')),
-  AppRoutes.materialLogisticsList: (_) => const TenantGate(child: Text('En proceso')),
-  AppRoutes.operationExpenses: (_) => const TenantGate(child: Text('En proceso')),
-  AppRoutes.operationExpensesList: (_) => const TenantGate(child: Text('En proceso')),
-  AppRoutes.vehicleExpenses: (_) => const TenantGate(child: Text('En proceso')),
-  AppRoutes.vehicleExpensesList: (_) => const TenantGate(child: Text('En proceso')),
+  AppRoutes.profile: (_) => const TenantGate(child: EnProceso()),
+  AppRoutes.support: (_) => const TenantGate(child: SupportScreen()),
+
+  // vacation comparte ruta lista/alta: entrada por lectura, acciones por bit en el feature (S5)
+  AppRoutes.vacationLeave: (_) => const RbacGate(viewCode: 'vacation', child: EnProceso()),
+  AppRoutes.weeklyMileage: (_) {
+    return const RbacGate(viewCode: 'weekly_mileage', require: kWriteMask, child: EnProceso());
+  },
+  AppRoutes.weeklyMileageList: (_) => const RbacGate(viewCode: 'weekly_mileage', child: EnProceso()),
+  AppRoutes.vehicleLiability: (_) {
+    return const RbacGate(viewCode: 'vehicle_liability', require: kWriteMask, child: EnProceso());
+  },
+  AppRoutes.vehicleLiabilityList: (_) => const RbacGate(viewCode: 'vehicle_liability', child: EnProceso()),
+  AppRoutes.fuelRequest: (_) {
+    return const RbacGate(viewCode: 'gasoline_receipt', require: kWriteMask, child: EnProceso());
+  },
+  AppRoutes.fuelRequestList: (_) => const RbacGate(viewCode: 'gasoline_receipt', child: EnProceso()),
+  AppRoutes.materialValidation: (_) {
+    return const RbacGate(viewCode: 'material_validation', require: kWriteMask, child: EnProceso());
+  },
+  AppRoutes.materialValidationList: (_) => const RbacGate(viewCode: 'material_validation', child: EnProceso()),
+  AppRoutes.materialValidationDetail: (_) => const RbacGate(viewCode: 'material_validation', child: EnProceso()),
+  AppRoutes.materialLogistics: (_) {
+    return const RbacGate(viewCode: 'material_logistics', require: kWriteMask, child: EnProceso());
+  },
+  AppRoutes.materialLogisticsList: (_) => const RbacGate(viewCode: 'material_logistics', child: EnProceso()),
+  AppRoutes.operationExpenses: (_) {
+    return const RbacGate(viewCode: 'requests_expenses', require: kWriteMask, child: EnProceso());
+  },
+  AppRoutes.operationExpensesList: (_) => const RbacGate(viewCode: 'requests_expenses', child: EnProceso()),
+  AppRoutes.vehicleExpenses: (_) {
+    return const RbacGate(viewCode: 'vehicle_expense_control', require: kWriteMask, child: EnProceso());
+  },
+  AppRoutes.vehicleExpensesList: (_) => const RbacGate(viewCode: 'vehicle_expense_control', child: EnProceso()),
 };
+
+class EnProceso extends StatelessWidget {
+  const EnProceso({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: const AppBarHeader('NO DISPONIBLE'),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Center(child: Text('EN PROCESO...'));
+        },
+      ),
+    );
+  }
+}

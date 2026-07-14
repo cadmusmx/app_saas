@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:gaso_tenant_app/core/auth/auth_context.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:gaso_tenant_app/app/router/routes.dart';
 import 'package:gaso_tenant_app/app/widgets/connection_listener.dart';
+import 'package:gaso_tenant_app/core/auth/session_user.dart';
 import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:gaso_tenant_app/core/services/messenger_service.dart';
 import 'package:gaso_tenant_app/core/services/theme_service.dart';
@@ -20,10 +22,19 @@ class GasoTenantApp extends StatelessWidget {
   /// tiene acceso a un `BuildContext` (deep links, FCM handlers).
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-  ThemeData _buildTheme(Brightness brightness) {
+  Color _seed(String? hex) {
+    final h = (hex ?? Branding.defaultPrimaryColor).replaceFirst('#', '');
+    final v = int.tryParse(h.length == 6 ? 'FF$h' : h, radix: 16);
+    return v == null ? Colors.blueAccent : Color(v);
+  }
+
+  ThemeData _buildTheme(BuildContext context, Brightness brightness) {
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent, brightness: brightness),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: _seed(context.watch<AuthContext>().branding?.primaryColor),
+        brightness: brightness,
+      ),
       cardTheme: CardThemeData(elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         elevation: 0,
@@ -61,8 +72,8 @@ class GasoTenantApp extends StatelessWidget {
         return MaterialApp(
           navigatorKey: navigatorKey,
           debugShowCheckedModeBanner: Config.appEnv == AppEnv.dev,
-          theme: _buildTheme(Brightness.light),
-          darkTheme: _buildTheme(Brightness.dark),
+          theme: _buildTheme(context, Brightness.light),
+          darkTheme: _buildTheme(context, Brightness.dark),
           // Deshabilita la restauración automática de estado de navegación
           // el que intenta cargar la ruta "/" al volver desde deep link.
           restorationScopeId: null,

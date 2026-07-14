@@ -2,13 +2,17 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:gaso_tenant_app/core/auth/auth_token.dart';
+import 'package:gaso_tenant_app/core/auth/auth_context.dart';
 import 'package:gaso_tenant_app/core/http/api_exception.dart';
 import 'package:gaso_tenant_app/core/http/http_service.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
 import 'package:gaso_tenant_app/core/tenant/tenant.dart';
 import 'package:gaso_tenant_app/core/tenant/tenant_context.dart';
 import 'package:gaso_tenant_app/core/tenant/tenant_storage.dart';
+import 'package:gaso_tenant_app/core/services/fcm_service.dart';
+import 'package:gaso_tenant_app/features/auth/data/me_service.dart';
 
 enum AuthStatus { success, mfaRequired, mfaSetupRequired, failure }
 
@@ -70,6 +74,7 @@ class AuthService with ChangeNotifier {
 
   final _api = _AuthApi();
   final _tenantStorage = TenantStorage();
+  final _meService = MeService();
 
   bool _isAuthenticated = false;
   String? _token;
@@ -93,6 +98,7 @@ class AuthService with ChangeNotifier {
         _tokenExpiry = expiryDate;
         AuthToken.set(token);
         notifyListeners();
+        await hydrateSession();
       } else {
         await _clearSecureData();
       }
@@ -100,6 +106,18 @@ class AuthService with ChangeNotifier {
       await _clearSecureData(); // estado parcial/corrupto
     }
     loadedAuthState.value = true;
+  }
+
+  /// getMe() → AuthContext. Best-effort: un 401 ya cerró sesión vía HttpService.
+  /// Devuelve true si la sesión RBAC quedó hidratada.
+  Future<bool> hydrateSession() async {
+    final res = await _meService.getMe();
+    if (res.success && res.data != null) {
+      AuthContext.instance.setSession(res.data!);
+      return true;
+    }
+    DebugLog.warning('hydrateSession falló: ${res.message}');
+    return false; // offline en cold-start: token válido pero sin views (ver §5)
   }
 
   /// Login conjunto (empresa + usuario + contraseña)
@@ -179,6 +197,7 @@ class AuthService with ChangeNotifier {
       //   éxito → { id, name, email, tenantId, tenantSlug, tenantName, accessToken, expiresIn }  (expiresIn en segundos)
       final ttlSeconds = (data['expiresIn'] as num?)?.toInt() ?? _defaultSessionTtlSeconds;
       await _saveToken(accessToken, ttlSeconds: ttlSeconds);
+      await hydrateSession();
 
       return AuthResult.success();
     } on ApiException catch (e) {
@@ -228,6 +247,8 @@ class AuthService with ChangeNotifier {
   Future<void> logout() async {
     await _clearSecureData();
     AuthToken.clear();
+    AuthContext.instance.clear();
+    await FcmService().dispose();
     _isAuthenticated = false;
     _token = null;
     _tokenExpiry = null;

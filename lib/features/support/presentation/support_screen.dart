@@ -7,16 +7,16 @@ import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:gaso_tenant_app/core/services/connectivity_service.dart';
 import 'package:gaso_tenant_app/core/tenant/tenant_context.dart';
 import 'package:gaso_tenant_app/features/auth/data/auth_service.dart';
-import 'package:gaso_tenant_app/features/health/data/health_service.dart';
+import 'package:gaso_tenant_app/features/support/data/health_service.dart';
 
-class HealthScreen extends StatefulWidget {
-  const HealthScreen({super.key});
+class SupportScreen extends StatefulWidget {
+  const SupportScreen({super.key});
 
   @override
-  State<HealthScreen> createState() => _HealthScreenState();
+  State<SupportScreen> createState() => _SupportScreenState();
 }
 
-class _HealthScreenState extends State<HealthScreen> {
+class _SupportScreenState extends State<SupportScreen> {
   final _health = HealthService();
   String _version = '—';
   bool _loading = false;
@@ -63,10 +63,11 @@ class _HealthScreenState extends State<HealthScreen> {
     final tenant = context.watch<TenantContext>().current;
 
     return Scaffold(
-      appBar: AppBarHeader('Estado de la app'),
+      appBar: AppBarHeader('Soporte técnico'),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Text('ESTADO DE LA APP', style: TextTheme.of(context).titleSmall),
           _row('Versión', _version),
           _row('Entorno', Config.appEnv.name),
           _row('BFF', Config.apiUrl),

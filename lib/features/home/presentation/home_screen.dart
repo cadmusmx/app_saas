@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+
 import 'package:gaso_tenant_app/app/router/routes.dart';
 import 'package:gaso_tenant_app/app/widgets/appbar_header.dart';
 import 'package:gaso_tenant_app/app/widgets/drawer_lateral.dart';
+import 'package:gaso_tenant_app/app/widgets/menu_registry.dart';
+import 'package:gaso_tenant_app/core/auth/auth_context.dart';
 import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:gaso_tenant_app/core/helpers/connection_helper.dart';
 import 'package:gaso_tenant_app/core/helpers/responsive_helper.dart';
@@ -10,7 +14,6 @@ import 'package:gaso_tenant_app/core/logging/debug_log.dart';
 import 'package:gaso_tenant_app/core/services/fcm_service.dart';
 import 'package:gaso_tenant_app/core/services/messenger_service.dart';
 import 'package:gaso_tenant_app/core/services/session_service.dart';
-import 'package:gaso_tenant_app/features/home/domain/home.dart';
 import 'package:gaso_tenant_app/features/notifications/data/notification_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -23,31 +26,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final NotificationService _notificationService = NotificationService();
   final SessionService _sessionService = SessionService();
-
-  List<MenuOption> options = [
-    MenuOption('KILOMETRAJE SEMANAL', image: 'assets/icons/odometer.png', path: AppRoutes.weeklyMileage),
-    MenuOption('SOLICITUD DE GASOLINA', image: 'assets/icons/gas-station.png', path: AppRoutes.fuelRequest),
-    MenuOption(
-      'RESPONSIVA VEHICULAR',
-      description: 'RESPONSABILIDAD Y SERVICIOS',
-      image: 'assets/icons/car-document.png',
-      path: AppRoutes.vehicleLiability,
-    ),
-    MenuOption('GASTO DE OPERACIÓN', image: 'assets/icons/budget.png', path: AppRoutes.operationExpenses),
-    MenuOption('GASTO VEHICULAR', image: 'assets/icons/budget.png', path: AppRoutes.vehicleExpenses),
-    MenuOption(
-      'VALIDACIÓN DE MATERIAL',
-      image: 'assets/icons/package.png',
-      description: 'ENTRADA Y SALIDA',
-      path: AppRoutes.materialValidation,
-    ),
-    MenuOption(
-      'LOGÍSTICA DE MATERIAL',
-      image: 'assets/icons/logistics.png',
-      description: 'RECEPCIÓN Y ENTREGA',
-      path: AppRoutes.materialLogistics,
-    ),
-  ];
 
   @override
   void initState() {
@@ -97,23 +75,19 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _handleOptionTap(MenuOption option) {
-    if (!option.released) {
-      return MessengerService.info('En proceso');
-    }
-    if (option.path != null) {
-      Navigator.pushNamed(context, option.path!);
-    } else {
-      option.onTap!();
-    }
+  void _handleMenuItemTap(MenuItem item) {
+    Navigator.pushNamed(context, item.writeRoute);
   }
 
   @override
   Widget build(BuildContext context) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
+    final auth = context.watch<AuthContext>();
+    final menuList = visibleMenu(auth).where((it) => auth.canWrite(it.viewCode)).toList();
+
     return Scaffold(
-      appBar: const AppBarHeader(null, showNotifications: true),
+      appBar: const AppBarHeader('', showNotifications: true),
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth == 0 || constraints.maxHeight == 0) {
@@ -126,11 +100,11 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisSpacing: 8,
             ),
             padding: EdgeInsets.all(ResponsiveHelper.mainPadding(constraints)),
-            itemCount: options.length,
+            itemCount: menuList.length,
             itemBuilder: (context, index) {
-              final MenuOption option = options[index];
+              final MenuItem item = menuList[index];
               return InkWell(
-                onTap: () => _handleOptionTap(option),
+                onTap: () => _handleMenuItemTap(item),
                 child: Card(
                   color: colorScheme.surfaceContainerLowest,
                   child: Padding(
@@ -138,10 +112,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Image.asset(option.image, width: 32, height: 32, color: colorScheme.primary),
+                        Image.asset(item.image, width: 32, height: 32, color: colorScheme.primary),
                         SizedBox(height: 8.0),
                         Text(
-                          option.title,
+                          item.label,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
@@ -150,9 +124,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        if (option.description != null)
+                        if (item.description != null)
                           Text(
-                            option.description ?? 'GASO COMUNICACIONES',
+                            item.description!,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,

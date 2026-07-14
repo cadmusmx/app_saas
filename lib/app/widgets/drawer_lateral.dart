@@ -46,7 +46,7 @@ class _DrawerLateralState extends State<DrawerLateral> {
                 Flexible(
                   child: Text(
                     (user?.user.name ?? '').toUpperCase(),
-                    style: textTheme.titleMedium?.copyWith(color: colorScheme.onPrimary, fontWeight: FontWeight.bold),
+                    style: textTheme.titleSmall?.copyWith(color: colorScheme.onPrimary),
                   ),
                 ),
                 Flexible(

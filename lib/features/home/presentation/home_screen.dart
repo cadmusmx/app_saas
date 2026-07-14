@@ -85,6 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
     TextTheme textTheme = Theme.of(context).textTheme;
     final auth = context.watch<AuthContext>();
     final menuList = visibleMenu(auth).where((it) => auth.canWrite(it.viewCode)).toList();
+    final user = auth.current;
 
     return Scaffold(
       appBar: const AppBarHeader('', showNotifications: true),
@@ -92,6 +93,35 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context, constraints) {
           if (constraints.maxWidth == 0 || constraints.maxHeight == 0) {
             return const SizedBox.shrink();
+          }
+          if (menuList.isEmpty) {
+            return Padding(
+              padding: EdgeInsets.all(32),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset("assets/images/logo.png", width: 64, color: colorScheme.onSurface),
+                    Text('GASO MULTI-TENANT', style: textTheme.titleLarge),
+                    RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                        text: 'CONSULTE A ',
+                        style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w300),
+                        children: <TextSpan>[
+                          TextSpan(
+                            text: user?.branding.displayName ?? 'SU TENANT',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const TextSpan(text: ' PARA SABER MÁS ACERCA DE LO QUE PUEDE LOGRAR'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
           return GridView.builder(
             gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(

@@ -114,10 +114,23 @@ class AuthService with ChangeNotifier {
     final res = await _meService.getMe();
     if (res.success && res.data != null) {
       AuthContext.instance.setSession(res.data!);
+      // OPCIÓN (A) - pendiente: cachear la última sesión buena para arranque offline.
+      // await _storage.write(key: _keySession, value: jsonEncode(res.rawBody));
       return true;
     }
+
+    // OPCIÓN (A) - pendiente: re-hidratar desde caché si getMe falló por red (no 401).
+    // El 401 ya limpió todo vía onUnauthorized, así que solo aplica a fallos de red.
+    // if (res.statusCode == null) {
+    //   final cached = await _storage.read(key: _keySession);
+    //   if (cached != null) {
+    //     AuthContext.instance.setSession(SessionUser.fromMe(jsonDecode(cached)));
+    //     return true; // sesión "stale" usable offline; se refresca al re-conectar
+    //   }
+    // }
+
     DebugLog.warning('hydrateSession falló: ${res.message}');
-    return false; // offline en cold-start: token válido pero sin views (ver §5)
+    return false; // → LoadScreen muestra SessionRetryScreen (opción B, activa)
   }
 
   /// Login conjunto (empresa + usuario + contraseña)

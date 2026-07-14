@@ -7,8 +7,7 @@ import 'package:gaso_tenant_app/core/tenant/tenant.dart';
 //   toda máscara no-canónica se fuerza a `Perm.none` (toda no-canónica carece de R,
 //   así que forzar a 0 nunca recorta una capacidad legítima) y se deja un tripwire en el log.
 
-/// Usuario autenticado. `admin` se conserva por fidelidad al contrato pero
-/// **NO** participa en el RBAC del menú/guards (decisión cerrada).
+/// Usuario autenticado. `admin` se conserva por fidelidad al contrato pero **NO** participa en el RBAC del menú/guards (decisión cerrada).
 class AppUser {
   final int? id;
   final String name;
@@ -16,7 +15,7 @@ class AppUser {
   final bool admin;
   final int? area;
   final int? cityBase;
-  final int? departament;
+  final int? department;
   final int? position;
   final int? region;
   final int? company;
@@ -28,7 +27,7 @@ class AppUser {
     required this.admin,
     this.area,
     this.cityBase,
-    this.departament,
+    this.department,
     this.position,
     this.region,
     this.company,
@@ -41,7 +40,7 @@ class AppUser {
     admin: _asBool(j['admin']),
     area: _asInt(j['area']),
     cityBase: _asInt(j['cityBase']),
-    departament: _asInt(j['departament']),
+    department: _asInt(j['departament']),
     position: _asInt(j['position']),
     region: _asInt(j['region']),
     company: _asInt(j['company']),
@@ -121,7 +120,7 @@ class SessionUser {
   }
 }
 
-// ── Mapeo interno ─────────────────────────────────────────────────────────
+// Mapeo interno
 
 /// El tenant de `/api/me` viene en camelCase (`{id,slug,name,isActive,plan}`),
 /// distinto del PascalCase de resolve-tenant (`Tenant.fromBff`). Se construye
@@ -167,7 +166,7 @@ Map<String, bool> _boolMap(dynamic raw) {
 List<String> _stringList(dynamic raw) =>
     raw is List ? raw.map((e) => e.toString()).toList(growable: false) : const <String>[];
 
-// ── Coerciones tolerantes (el BFF/SQL pueden serializar de varias formas) ──
+// Coerciones tolerantes (el BFF/SQL pueden serializar de varias formas)
 
 int? _asInt(dynamic v) {
   if (v is int) return v;

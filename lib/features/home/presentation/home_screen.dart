@@ -96,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
           }
           if (menuList.isEmpty) {
             return Padding(
-              padding: EdgeInsets.all(32),
+              padding: EdgeInsets.all(40),
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -107,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     RichText(
                       textAlign: TextAlign.center,
                       text: TextSpan(
-                        text: 'CONSULTE A ',
+                        text: 'REVISE EL MENÚ LATERAL O CONSULTE A ',
                         style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w300),
                         children: <TextSpan>[
                           TextSpan(

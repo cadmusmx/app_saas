@@ -13,7 +13,7 @@ class Config {
   static String get _s3Folder => appEnv == AppEnv.prod ? 'Pr' : 'Qa';
 
   /// URL S3
-  static String get s3Url => 'https://${Env.s3Bucket}.s3.us-east-1.amazonaws.com/$_s3Folder';
+  static String get s3Url => 'https://${Env.s3Bucket}.s3.us-east-1.amazonaws.com/$_s3Folder/';
 
   /// Header de tenant que espera el BFF.
   static const String tenantHeaderName = 'x-tenant-slug';

@@ -96,7 +96,6 @@ class _DrawerLateralState extends State<DrawerLateral> {
                         .toList(),
                   ),
           ),
-          SizedBox(height: 16),
           DrawerListTile(
             DrawerOption(path: AppRoutes.support, title: 'Soporte técnico', icon: Icons.support_agent),
             colorScheme.primary,

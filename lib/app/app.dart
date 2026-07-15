@@ -34,6 +34,7 @@ class GasoTenantApp extends StatelessWidget {
       colorScheme: ColorScheme.fromSeed(
         seedColor: _seed(context.watch<AuthContext>().branding?.primaryColor),
         brightness: brightness,
+        dynamicSchemeVariant: DynamicSchemeVariant.content
       ),
       cardTheme: CardThemeData(elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(

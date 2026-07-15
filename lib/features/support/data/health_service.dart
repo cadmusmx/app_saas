@@ -4,7 +4,6 @@ import 'package:gaso_tenant_app/core/http/http_service.dart';
 import 'package:gaso_tenant_app/core/http/service_response.dart';
 
 class HealthService extends HttpService {
-  /// GET /api/health (apiUrl ya incluye /api).
   Future<ServiceResponse<Map<String, dynamic>>> check() async {
     try {
       final response = await send('GET', '/health');

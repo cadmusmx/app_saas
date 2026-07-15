@@ -29,8 +29,7 @@ class Perm {
   static bool hasDelete(int mask) => (mask & d) == d;
  
   /// Entero en 0..15 y, si tiene W/U/D, también R.
-  /// Uso: saneo fail-closed en me_service al mapear /api/me →
-  ///   final safe = Perm.isCanonical(m) ? m : Perm.none;
+  /// Uso: saneo fail-closed en me_service al mapear /api/me → final safe = Perm.isCanonical(m) ? m : Perm.none;
   /// (toda no-canónica carece de R, así que forzar a 0 no recorta nada legítimo).
   static bool isCanonical(int mask) {
     if (mask < 0 || mask > all) return false;

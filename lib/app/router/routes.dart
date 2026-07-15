@@ -1,6 +1,6 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
+
 import 'package:gaso_tenant_app/app/widgets/appbar_header.dart';
 import 'package:gaso_tenant_app/app/widgets/rbac_gate.dart';
 import 'package:gaso_tenant_app/app/widgets/tenant_gate.dart';
@@ -110,8 +110,19 @@ final Map<String, WidgetBuilder> appRoutes = {
     return const RbacGate(viewCode: 'material_validation', require: kWriteMask, child: EnProceso());
   },
   AppRoutes.materialValidationList: (_) => const RbacGate(viewCode: 'material_validation', child: EnProceso()),
-  AppRoutes.materialValidationDetail: (_) => const RbacGate(viewCode: 'material_validation', child: EnProceso()),
-  AppRoutes.materialLogistics: (_) {
+  AppRoutes.materialValidationDetail: (context) {
+    // final args = ModalRoute.of(context)!.settings.arguments;
+    // final folio = args is String ? args : null;
+    // final material = args is MaterialValidation ? args : null;
+    
+    // child: MaterialValidationDetail(folio: folio, materialValidation: material)
+    return const RbacGate(viewCode: 'material_validation', child: EnProceso());
+  },
+  AppRoutes.materialLogistics: (context) {
+    // final args = ModalRoute.of(context)!.settings.arguments;
+    // final record = args is MaterialLogistics ? args : null;
+
+    // child: MaterialLogisticsShell(record: record)
     return const RbacGate(viewCode: 'material_logistics', require: kWriteMask, child: EnProceso());
   },
   AppRoutes.materialLogisticsList: (_) => const RbacGate(viewCode: 'material_logistics', child: EnProceso()),

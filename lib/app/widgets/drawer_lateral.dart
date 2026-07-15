@@ -96,6 +96,7 @@ class _DrawerLateralState extends State<DrawerLateral> {
                         .toList(),
                   ),
           ),
+          Divider(),
           DrawerListTile(
             DrawerOption(path: AppRoutes.support, title: 'Soporte técnico', icon: Icons.support_agent),
             colorScheme.primary,
@@ -110,7 +111,8 @@ class _DrawerLateralState extends State<DrawerLateral> {
               );
             },
           ),
-          Divider(height: 32),
+          SizedBox(height: 32),
+          Divider(),
           ListTile(
             title: Text('CAMBIAR EMPRESA', style: textTheme.bodyMedium),
             trailing: Icon(Icons.swap_horiz, color: colorScheme.primary),

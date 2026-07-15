@@ -25,7 +25,7 @@ class GasoTenantApp extends StatelessWidget {
   Color _seed(String? hex) {
     final h = (hex ?? Branding.defaultPrimaryColor).replaceFirst('#', '');
     final v = int.tryParse(h.length == 6 ? 'FF$h' : h, radix: 16);
-    return v == null ? Colors.blueAccent : Color(v);
+    return v == null ? Colors.black : Color(v);
   }
 
   ThemeData _buildTheme(BuildContext context, Brightness brightness) {

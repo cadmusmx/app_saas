@@ -88,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final user = auth.current;
 
     return Scaffold(
-      appBar: const AppBarHeader('', showNotifications: true),
+      appBar: AppBarHeader(user?.branding.displayName ?? 'INICIO', showNotifications: true),
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth == 0 || constraints.maxHeight == 0) {
@@ -102,17 +102,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset("assets/images/logo.png", width: 64, color: colorScheme.onSurface),
-                    Text('GASO MULTI-TENANT', style: textTheme.titleLarge),
+                    Image.asset("assets/images/logo.png", width: 80, color: colorScheme.onSurface),
+                    Text('GASO MULTI-TENANT', style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                     RichText(
                       textAlign: TextAlign.center,
                       text: TextSpan(
                         text: 'REVISE EL MENÚ LATERAL O CONSULTE A ',
-                        style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w300),
+                        style: textTheme.bodyMedium,
                         children: <TextSpan>[
                           TextSpan(
                             text: user?.branding.displayName ?? 'SU TENANT',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.primary),
                           ),
                           const TextSpan(text: ' PARA SABER MÁS ACERCA DE LO QUE PUEDE LOGRAR'),
                         ],

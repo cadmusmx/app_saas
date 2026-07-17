@@ -7,7 +7,7 @@ import 'package:gaso_tenant_app/core/logging/debug_log.dart';
 /// Gestión unificada de fotografías con S3
 class PhotoManager {
   final S3Service _s3Service;
-  final String userId;
+  final int userId;
   final String photosFolder;
 
   PhotoManager({required S3Service s3Service, required this.userId, required this.photosFolder})

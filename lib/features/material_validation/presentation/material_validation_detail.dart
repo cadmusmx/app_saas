@@ -205,18 +205,6 @@ class _HeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconsByProject = {
-      1: Icons.update, // 1. Modernización
-      2: Icons.storage, // 2. SDE
-      3: Icons.add_location, // 3. New Sites
-      4: Icons.move_up, // 4. Relocation
-      5: Icons.savings, // 5. Low Cost
-      6: Icons.eco, // 6. Green Field
-      7: Icons.inventory, // 7. NSB
-      8: Icons.shield, // 8. Resguardo
-      9: Icons.undo, // 9. Logística Inversa
-    };
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -228,7 +216,7 @@ class _HeaderCard extends StatelessWidget {
               radius: 24,
               backgroundColor: vm.cancelada ? colorScheme.errorContainer : colorScheme.primaryContainer,
               child: Icon(
-                vm.cancelada ? Icons.block : (iconsByProject[vm.idProyecto] ?? Icons.category),
+                vm.cancelada ? Icons.block : Icons.category,
                 color: vm.cancelada ? colorScheme.onErrorContainer : colorScheme.onPrimaryContainer,
               ),
             ),

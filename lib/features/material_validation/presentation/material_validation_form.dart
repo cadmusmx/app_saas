@@ -1,21 +1,21 @@
 import 'dart:io';
 import 'dart:convert';
-import 'package:gaso_tenant_app/core/helpers/input_formatters_helper.dart';
-import 'package:gaso_tenant_app/core/http/service_response.dart';
-import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gaso_tenant_app/core/auth/session_user.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:signature/signature.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:gaso_tenant_app/app/router/routes.dart';
 import 'package:gaso_tenant_app/app/widgets/appbar_header.dart';
-import 'package:gaso_tenant_app/core/widgets/info/info_letter.dart';
+import 'package:gaso_tenant_app/core/auth/auth_context.dart';
 import 'package:gaso_tenant_app/core/forms/signature_validator.dart';
 import 'package:gaso_tenant_app/core/forms/controllers_manager.dart';
 import 'package:gaso_tenant_app/core/forms/draft_manager.dart';
 import 'package:gaso_tenant_app/core/forms/photo_manager.dart';
+import 'package:gaso_tenant_app/core/http/service_response.dart';
 import 'package:gaso_tenant_app/core/validators/form_validators.dart';
 import 'package:gaso_tenant_app/core/widgets/forms/photo_upload.dart';
 import 'package:gaso_tenant_app/core/widgets/lists/labels.dart';
@@ -23,6 +23,7 @@ import 'package:gaso_tenant_app/core/widgets/forms/form_fields.dart';
 import 'package:gaso_tenant_app/core/widgets/forms/dialogs.dart';
 import 'package:gaso_tenant_app/core/widgets/lists/tiles.dart';
 import 'package:gaso_tenant_app/core/widgets/forms/signatures.dart';
+import 'package:gaso_tenant_app/core/widgets/info/info_letter.dart';
 import 'package:gaso_tenant_app/core/selection/selection_list.dart';
 import 'package:gaso_tenant_app/core/storage/preferences.dart';
 import 'package:gaso_tenant_app/core/config/config.dart';
@@ -38,9 +39,11 @@ import 'package:gaso_tenant_app/core/helpers/regexp_helper.dart';
 import 'package:gaso_tenant_app/core/helpers/formatters_helper.dart';
 import 'package:gaso_tenant_app/core/helpers/connection_helper.dart';
 import 'package:gaso_tenant_app/core/helpers/generators_helper.dart';
+import 'package:gaso_tenant_app/core/helpers/input_formatters_helper.dart';
 import 'package:gaso_tenant_app/features/material_validation/domain/material_validation.dart';
 import 'package:gaso_tenant_app/features/material_validation/data/material_validation_service.dart';
 import 'package:gaso_tenant_app/features/material_validation/data/selection_lists.dart';
+import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_info.dart';
 
 class MaterialValidationForm extends StatefulWidget {
   final MaterialValidation? materialValidation;
@@ -51,6 +54,7 @@ class MaterialValidationForm extends StatefulWidget {
 }
 
 class _MaterialValidationFormState extends State<MaterialValidationForm> {
+  late final SessionUser _sessionUser;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final MaterialValidationService _materialValidationService = MaterialValidationService();
   final S3Service _s3Service = S3Service();
@@ -90,7 +94,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
 
   List<PhotoField> _photoFields = [];
   final Map<String, String> _photoUrls = {};
-  final String _photosFolder = 'imgValMat/';
+  late final String _photosFolder;
   final String _formattedDate = getCurrentFormattedDate('yyyyMMdd:hhmmss');
 
   bool _isSubmitting = false;
@@ -101,8 +105,26 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
   @override
   void initState() {
     super.initState();
-    _draftManager = DraftManager('material_validation_draft');
-    _loadData();
+    try {
+      final authContext = context.watch<AuthContext>();
+      if (authContext.current != null && authContext.current?.user.id != null) {
+        _sessionUser = authContext.current!;
+        _photosFolder = '${_sessionUser.tenant.slug}/material_validation/';
+        _draftManager = DraftManager('material_validation_draft');
+        _photoManager = PhotoManager(
+          s3Service: _s3Service,
+          userId: _sessionUser.user.id!,
+          photosFolder: _photosFolder,
+        );
+        _loadData();
+      } else {
+        MessengerService.info('Ocurrió un error al obtener sus datos');
+        if (mounted) Navigator.pushReplacementNamed(context, AppRoutes.home);
+      }
+    } catch (e) {
+      DebugLog.error('mv-initState $e');
+      MessengerService.error('Ocurrió un error al cargar el formulario');
+    }
   }
 
   @override
@@ -115,15 +137,10 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
   Future<void> _loadData() async {
     try {
       await _preferences.init();
-      _photoManager = PhotoManager(s3Service: _s3Service, userId: 'HARDCODED-userId', photosFolder: _photosFolder);
       String? materialDescargadoFotoUrl;
       String? materialEnTransporteFotoUrl;
       String? placasFotoUrl;
       String? transporteFotoUrl;
-      if ('HARDCODED-userId'.isEmpty) {
-        MessengerService.error('Ocurrió un error al obtener el usuario');
-        if (mounted) Navigator.pushReplacementNamed(context, AppRoutes.home);
-      }
       if (widget.materialValidation != null && mounted) {
         setState(() {
           _isEdition = true;
@@ -167,13 +184,14 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
         });
         if (_material?.tarimas != null && mounted) {
           setState(() {
-            _pfTarimas =
-                _material!.tarimas.entries.map((e) => PhotoField(e.key, snakeToTitle(e.key), e.value)).toList();
+            _pfTarimas = _material!.tarimas.entries
+                .map((e) => PhotoField(e.key, snakeToTitle(e.key), e.value))
+                .toList();
           });
         }
       } else if (mounted) {
-        setState(() => _regionForm = 'HARDCODED-idRegion'.isNotEmpty ? 'HARDCODED-idRegion' : null);
-        _controllers.setValue('responsable', 'HARDCODED-userName');
+        setState(() => _regionForm = _sessionUser.user.region?.toString());
+        _controllers.setValue('responsable', _sessionUser.user.name);
         await _resolveOperationType();
       }
       final location = await _locationService.getCurrentLocation();
@@ -279,8 +297,12 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
     });
   }
 
-  void _updatePhotoFields(
-      {String? transporteUrl, String? placasUrl, String? materialTransporteUrl, String? descargadoUrl}) {
+  void _updatePhotoFields({
+    String? transporteUrl,
+    String? placasUrl,
+    String? materialTransporteUrl,
+    String? descargadoUrl,
+  }) {
     // Preservar URLs/paths de los PhotoFields actuales si no se pasan parámetros
     final existing = {for (var pf in _photoFields) pf.key: pf};
 
@@ -292,8 +314,11 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
     _photoFields = [
       PhotoField('foto_transporte', 'Transporte (Vehículo)', resolve('foto_transporte', transporteUrl)),
       PhotoField('foto_placas', 'Placas del transporte', resolve('foto_placas', placasUrl)),
-      PhotoField('foto_material_transporte', 'Material en transporte',
-          resolve('foto_material_transporte', materialTransporteUrl)),
+      PhotoField(
+        'foto_material_transporte',
+        'Material en transporte',
+        resolve('foto_material_transporte', materialTransporteUrl),
+      ),
     ];
     if (_es) {
       _photoFields.add(PhotoField('foto_descargado', 'Material descargado', resolve('foto_descargado', descargadoUrl)));
@@ -364,7 +389,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
         );
         if (confirmed != true) return;
 
-        final folio = getFolio('HARDCODED-idUsuario', 'VM${_es ? 'E' : 'S'}-$_proyectoForm$_tipoMaterialForm');
+        final folio = getFolio(_sessionUser.user.id, 'VM${_es ? 'E' : 'S'}-$_proyectoForm$_tipoMaterialForm');
         final success = await _handleNewForm(folio);
         if (!mounted) return;
         if (success) {
@@ -400,7 +425,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
     // subir el QR del folio a S3
     final urlQR = 'appgaso://mv/$folio';
     final qrBytes = await _qrService.generateQrBytes(urlQR);
-    final String qrPath = '$_photosFolder${'HARDCODED-idUsuario'}/$folio.png';
+    final String qrPath = '$_photosFolder${_sessionUser.user.id}/$folio.png';
     final url = await _s3Service.uploadU8LToS3(qrBytes, qrPath, 'image/png');
     if (url == null) {
       MessengerService.error('Ocurrió un error al subir el QR a S3.');
@@ -452,15 +477,12 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
     final formData = _buildPayloadChanges();
     // Cambio de tipo E/S: regenerar folio y QR
     if (_esChanged) {
-      final newFolio = getFolio(
-        'HARDCODED-idUsuario',
-        'VM${_es ? 'E' : 'S'}-$_proyectoForm$_tipoMaterialForm',
-      );
+      final newFolio = getFolio(_sessionUser.user.id, 'VM${_es ? 'E' : 'S'}-$_proyectoForm$_tipoMaterialForm');
 
       // Generar y subir nuevo QR
       final urlQR = 'appgaso://mv/$newFolio';
       final qrBytes = await _qrService.generateQrBytes(urlQR);
-      final newQrPath = '$_photosFolder${'HARDCODED-idUsuario'}/$newFolio.png';
+      final newQrPath = '$_photosFolder${_sessionUser.user.id}/$newFolio.png';
       final qrUrl = await _s3Service.uploadU8LToS3(qrBytes, newQrPath, 'image/png');
       if (qrUrl == null) {
         MessengerService.error('Error al subir el nuevo QR.');
@@ -499,7 +521,8 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
         return null;
       }
     }
-    bool docsChanged = _documentos.any((d) => d['localPath'] != null) ||
+    bool docsChanged =
+        _documentos.any((d) => d['localPath'] != null) ||
         _documentosDel.isNotEmpty ||
         _documentos.any((d) => d['edt'] != null);
     if (docsChanged) {
@@ -514,8 +537,9 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
       MessengerService.info('No se hicieron cambios.');
       return null;
     }
-    final success =
-        await _handleRequest(() => _materialValidationService.materialValidation(formData, _es, _isEdition));
+    final success = await _handleRequest(
+      () => _materialValidationService.materialValidation(formData, _es, _isEdition),
+    );
     if (!success) return null;
     return _esChanged ? formData['folio'] as String? : '';
   }
@@ -551,7 +575,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
     final data = _controllers.toMap();
     final docsLimpio = _documentos.map((d) => {'name': d['name']!, 'file': d['file']!}).toList();
     return {
-      "idUsuario": 'HARDCODED-idUsuario',
+      "idUsuario": _sessionUser.user.id,
       "idProyecto": _proyectoForm,
       "idTipoMaterial": _tipoMaterialForm,
       "fecha": _fechaForm.toIso8601String(),
@@ -585,9 +609,9 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
       "idAlmacenDestino": [_destinoForm, _material?.almacenDestino],
       "totalPiezas": [currentData['totalPiezas'], '${_material?.totalPiezas}'],
       "placasTransporte": [currentData['placasTransporte'], _material?.placasTransporte],
-      "notas": [currentData['notas'], _material?.notas]
+      "notas": [currentData['notas'], _material?.notas],
     };
-    Map<String, dynamic> payload = {"idUsuario": 'HARDCODED-idUsuario', "idMaterial": _material?.id};
+    Map<String, dynamic> payload = {"idUsuario": _sessionUser.user.id, "idMaterial": _material?.id};
     for (var entry in values.entries) {
       if (entry.value[0] != entry.value[1]) payload.addAll({entry.key: entry.value[0]});
     }
@@ -608,20 +632,40 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
     String? currentClave = index != null ? _piezasMotivo[index]['cl'] : null;
     String? currentPiezas = index != null ? _piezasMotivo[index]['pzs'] : null;
     await _addEditPiezas(
-        _piezasMotivo, _piezasMotivoDel, _reasonsSL.list, 'Motivo', index, currentClave, currentPiezas);
+      _piezasMotivo,
+      _piezasMotivoDel,
+      _reasonsSL.list,
+      'Motivo',
+      index,
+      currentClave,
+      currentPiezas,
+    );
   }
 
   Future<void> _addEditPiezasEstadoF([int? index]) async {
     String? currentClave = index != null ? _piezasEstadoF[index]['cl'] : null;
     String? currentPiezas = index != null ? _piezasEstadoF[index]['pzs'] : null;
     await _addEditPiezas(
-        _piezasEstadoF, _piezasEstadoFDel, _physicalStatusSL.list, 'Estado físico', index, currentClave, currentPiezas);
+      _piezasEstadoF,
+      _piezasEstadoFDel,
+      _physicalStatusSL.list,
+      'Estado físico',
+      index,
+      currentClave,
+      currentPiezas,
+    );
   }
 
   /// Permite agregar o editar un registro de piezas
   Future<void> _addEditPiezas(
-      List<Map<String, String>> list, List<int> delList, List<OptionSL> options, String label, int? index,
-      [String? currentClave, String? currentPiezas]) async {
+    List<Map<String, String>> list,
+    List<int> delList,
+    List<OptionSL> options,
+    String label,
+    int? index, [
+    String? currentClave,
+    String? currentPiezas,
+  ]) async {
     final optionText = await showOptionTextDialog(
       context,
       'Agregar piezas',
@@ -685,7 +729,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
           Expanded(child: Text(piezas, overflow: TextOverflow.ellipsis)),
           SizedBox(width: 8),
           IconButton(onPressed: onEdit, icon: Icon(Icons.edit)),
-          IconButton(onPressed: onRemove, icon: Icon(Icons.delete))
+          IconButton(onPressed: onRemove, icon: Icon(Icons.delete)),
         ],
       ),
     );
@@ -702,77 +746,76 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) {
-        return StatefulBuilder(builder: (ctx, setDlgState) {
-          return AlertDialog(
-            title: Text(index != null ? 'Editar documento' : 'Agregar documento'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextFormField(
-                  controller: nameController,
-                  decoration: inputDec('Nombre del documento'),
-                  inputFormatters: [
-                    LengthLimitingTextInputFormatter(80),
-                    FilteringTextInputFormatter.deny(notUsedExp),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.attach_file),
-                  label: Text(
-                    localPath != null
-                        ? localPath!.split('/').last
-                        : (existingFileName.isNotEmpty ? existingFileName : 'Seleccionar archivo'),
-                    overflow: TextOverflow.ellipsis,
+        return StatefulBuilder(
+          builder: (ctx, setDlgState) {
+            return AlertDialog(
+              title: Text(index != null ? 'Editar documento' : 'Agregar documento'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    decoration: inputDec('Nombre del documento'),
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(80),
+                      FilteringTextInputFormatter.deny(notUsedExp),
+                    ],
                   ),
-                  onPressed: () async {
-                    final picked = await FilePicker.platform.pickFiles(
-                      type: FileType.custom,
-                      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
-                    );
-                    if (picked != null && picked.files.single.path != null) {
-                      const maxBytes = 5 * 1024 * 1024; // 10 MB
-                      if (picked.files.single.size > maxBytes) {
-                        return MessengerService.info('El archivo supera el máximo de 5 MB.');
-                      }
-                      final ext = picked.files.single.extension?.toLowerCase() ?? '';
-                      setDlgState(() {
-                        localPath = picked.files.single.path;
-                        mimeType = ext == 'pdf' ? 'application/pdf' : 'image/jpeg';
-                      });
-                    }
-                  },
-                ),
-                if (index != null && existingFileName.isNotEmpty && localPath == null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      'Archivo actual: $existingFileName',
-                      style: Theme.of(ctx).textTheme.bodySmall,
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.attach_file),
+                    label: Text(
+                      localPath != null
+                          ? localPath!.split('/').last
+                          : (existingFileName.isNotEmpty ? existingFileName : 'Seleccionar archivo'),
+                      overflow: TextOverflow.ellipsis,
                     ),
+                    onPressed: () async {
+                      final picked = await FilePicker.platform.pickFiles(
+                        type: FileType.custom,
+                        allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+                      );
+                      if (picked != null && picked.files.single.path != null) {
+                        const maxBytes = 5 * 1024 * 1024; // 10 MB
+                        if (picked.files.single.size > maxBytes) {
+                          return MessengerService.info('El archivo supera el máximo de 5 MB.');
+                        }
+                        final ext = picked.files.single.extension?.toLowerCase() ?? '';
+                        setDlgState(() {
+                          localPath = picked.files.single.path;
+                          mimeType = ext == 'pdf' ? 'application/pdf' : 'image/jpeg';
+                        });
+                      }
+                    },
                   ),
-              ],
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-              TextButton(
-                onPressed: () {
-                  if (nameController.text.trim().isEmpty) {
-                    MessengerService.info('El nombre del documento es obligatorio.');
-                    return;
-                  }
-                  if (index == null && localPath == null) {
-                    MessengerService.info('Selecciona un archivo.');
-                    return;
-                  }
-                  Navigator.pop(ctx, true);
-                },
-                child: const Text('Aceptar'),
+                  if (index != null && existingFileName.isNotEmpty && localPath == null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text('Archivo actual: $existingFileName', style: Theme.of(ctx).textTheme.bodySmall),
+                    ),
+                ],
               ),
-            ],
-          );
-        });
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+                TextButton(
+                  onPressed: () {
+                    if (nameController.text.trim().isEmpty) {
+                      MessengerService.info('El nombre del documento es obligatorio.');
+                      return;
+                    }
+                    if (index == null && localPath == null) {
+                      MessengerService.info('Selecciona un archivo.');
+                      return;
+                    }
+                    Navigator.pop(ctx, true);
+                  },
+                  child: const Text('Aceptar'),
+                ),
+              ],
+            );
+          },
+        );
       },
     );
 
@@ -829,8 +872,8 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
     final icon = fileRef.isEmpty
         ? Icons.attach_file
         : isPdf
-            ? Icons.picture_as_pdf
-            : Icons.image;
+        ? Icons.picture_as_pdf
+        : Icons.image;
     return Padding(
       padding: const EdgeInsets.only(left: 16, bottom: 12),
       child: Row(
@@ -841,7 +884,11 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                Text(
+                  name,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                ),
                 if (fileRef.isNotEmpty)
                   Text(
                     fileRef.split('/').last,
@@ -872,7 +919,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
         final bytes = await File(lp).readAsBytes();
         final mime = doc['mimeType'] ?? 'image/jpeg';
         final ext = mime.contains('pdf') ? 'pdf' : 'jpg';
-        final path = '${_photosFolder}docs/${'HARDCODED-idUsuario'}/$_formattedDate-$i.$ext';
+        final path = '${_photosFolder}docs/${_sessionUser.user.id}/$_formattedDate-$i.$ext';
         final url = await _s3Service.uploadU8LToS3(bytes, path, mime);
         if (url == null) {
           MessengerService.error('Error al subir el documento "${doc['name']}".');
@@ -1096,7 +1143,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
               _piezasMotivo[i]['pzs']!,
               onEdit: () => _addEditPiezasMotivo(i),
               onRemove: () => _removePiezas(i, _piezasMotivo, _piezasMotivoDel),
-            )
+            ),
         ],
       ),
       ExpansionListTile(
@@ -1110,7 +1157,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
               _piezasEstadoF[i]['pzs']!,
               onEdit: () => _addEditPiezasEstadoF(i),
               onRemove: () => _removePiezas(i, _piezasEstadoF, _piezasEstadoFDel),
-            )
+            ),
         ],
       ),
       TextFormField(
@@ -1222,19 +1269,22 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
       inputFormatters: [
         UpperCaseTextFormatter(),
         LengthLimitingTextInputFormatter(20),
-        FilteringTextInputFormatter.allow(lngExp)
+        FilteringTextInputFormatter.allow(lngExp),
       ],
     );
 
     return Scaffold(
-      appBar: AppBarHeader('${_isEdition ? 'Edición M.' : 'Material de'} ${_es ? 'Entrada' : 'Salida'}', actions: [
-        PopupMenuButton<String>(
-          itemBuilder: (context) => [
-            if (!_isEdition) PopupMenuItem(onTap: _loadDraft, child: Text('Cargar borrador')),
-            if (!_isEdition) PopupMenuItem(onTap: _saveDraft, child: Text('Guardar borrador')),
-          ],
-        ),
-      ]),
+      appBar: AppBarHeader(
+        '${_isEdition ? 'Edición M.' : 'Material de'} ${_es ? 'Entrada' : 'Salida'}',
+        actions: [
+          PopupMenuButton<String>(
+            itemBuilder: (context) => [
+              if (!_isEdition) PopupMenuItem(onTap: _loadDraft, child: Text('Cargar borrador')),
+              if (!_isEdition) PopupMenuItem(onTap: _saveDraft, child: Text('Guardar borrador')),
+            ],
+          ),
+        ],
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SafeArea(
@@ -1272,8 +1322,10 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
                           SectionTitle('Transporte y material'),
                           placasField,
                           PhotosGrid(context, _photoFields, watermark: _watermark),
-                          SectionTitle('Registro de evidencias',
-                              subtitle: 'Registre al menos una pieza, documento o tarima'),
+                          SectionTitle(
+                            'Registro de evidencias',
+                            subtitle: 'Registre al menos una pieza, documento o tarima',
+                          ),
                           MasonryGridView.count(
                             crossAxisCount: ResponsiveHelper.crossAxisCount(constraints),
                             mainAxisSpacing: 8,
@@ -1293,7 +1345,8 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
                                         icon: Icon(_isEdition ? Icons.save : Icons.check),
                                         onPressed: _submit,
                                         label: Text(
-                                            _isEdition ? 'GUARDAR CAMBIOS' : 'VALIDAR ${_es ? 'ENTRADA' : 'SALIDA'}'),
+                                          _isEdition ? 'GUARDAR CAMBIOS' : 'VALIDAR ${_es ? 'ENTRADA' : 'SALIDA'}',
+                                        ),
                                       ),
                                     ),
                                   ],

@@ -22,10 +22,9 @@ Future<String?> encodeFirma(SignatureController controller, bool isEdition, {req
 }
 
 /// Genera un folio único con información util.
-String getFolio(String idUsuario, String prefix) {
-  final id = int.tryParse(idUsuario);
-  if (id == null || id < 0 || id > 1048575) throw ArgumentError('Id no valido para el folio');
-  final hexId = id.toRadixString(16).toUpperCase().padLeft(5, '0');
+String getFolio(int? idUsuario, String prefix) {
+  if (idUsuario == null || idUsuario < 1 || idUsuario > 1048575) throw ArgumentError('idUsuario no valido para el folio');
+  final hexId = idUsuario.toRadixString(16).toUpperCase().padLeft(5, '0');
   final timestamp = DateTime.now().millisecondsSinceEpoch;
   final hexTS = timestamp.toRadixString(16).toUpperCase();
   return '$prefix$hexId$hexTS';

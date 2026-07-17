@@ -67,18 +67,13 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
   @override
   Future<List<MaterialValidation>> fetchData() async {
     final formData = <String, dynamic>{
-      'idUsuario': userData['idUser'],
+      'idUsuario': sessionUser.user.id,
       'tipo': _type.value,
       'condition': _condition.value,
-      'es': _es
+      'es': _es,
     };
     formData.removeWhere((key, value) => value == null);
-    final response = await _materialService.getRecords(
-      formData,
-      limit: limit,
-      page: currentPage,
-      sort: _sort.value,
-    );
+    final response = await _materialService.getRecords(formData, limit: limit, page: currentPage, sort: _sort.value);
     if (!response.success) MessengerService.error(response.message);
     return response.data!;
   }
@@ -125,7 +120,7 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
           optionsMap: {"Desde más recientes": 'DESC', "Desde más antiguos": 'ASC'},
           valueNotifier: _sort,
           clearValue: 'DESC',
-        )
+        ),
       ],
     );
   }
@@ -180,22 +175,14 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
                       launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
                     } else {
                       Navigator.pop(ctx);
-                      showImagesDialog(
-                        context,
-                        images: [VisualTitle<String>(doc['name'] ?? 'Documento', url)],
-                      );
+                      showImagesDialog(context, images: [VisualTitle<String>(doc['name'] ?? 'Documento', url)]);
                     }
                   },
                 ),
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cerrar'),
-          ),
-        ],
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar'))],
       ),
     );
   }
@@ -252,9 +239,9 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
                 spacing: 8,
                 children: [
                   Icon(Icons.block, size: 16, color: colorScheme.error),
-                  Text('Cancelada', style: TextStyle(color: colorScheme.error))
+                  Text('Cancelada', style: TextStyle(color: colorScheme.error)),
                 ],
-              )
+              ),
           ],
         ),
         trailing: PopupMenuButton<String>(
@@ -270,12 +257,15 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
                 );
                 break;
               case 'images':
-                await showImagesDialog(context, images: [
-                  VisualTitle<String>('Transporte', '${Config.s3Url}${vm.transporteFoto}'),
-                  VisualTitle<String>('Placas', '${Config.s3Url}${vm.placasFoto}'),
-                  VisualTitle<String>('En transporte', '${Config.s3Url}${vm.materialEnTransporteFoto}'),
-                  if (_es) VisualTitle<String>('Descargado', '${Config.s3Url}${vm.materialDescargadoFoto}'),
-                ]);
+                await showImagesDialog(
+                  context,
+                  images: [
+                    VisualTitle<String>('Transporte', '${Config.s3Url}${vm.transporteFoto}'),
+                    VisualTitle<String>('Placas', '${Config.s3Url}${vm.placasFoto}'),
+                    VisualTitle<String>('En transporte', '${Config.s3Url}${vm.materialEnTransporteFoto}'),
+                    if (_es) VisualTitle<String>('Descargado', '${Config.s3Url}${vm.materialDescargadoFoto}'),
+                  ],
+                );
                 break;
               case 'reason-pieces':
                 await showDetailsDialog(context, 'Motivo', [

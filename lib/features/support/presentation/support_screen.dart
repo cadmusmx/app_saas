@@ -44,7 +44,7 @@ class _SupportScreenState extends State<SupportScreen> {
     if (!mounted) return;
     setState(() {
       _loading = false;
-      _bffResult = res.success ? 'OK (${res.statusCode ?? 200})' : 'ERROR: ${res.message ?? 'sin respuesta del BFF'}';
+      _bffResult = res.success ? 'OK (${res.statusCode ?? 200})' : 'ERROR: ${res.message}';
     });
   }
 

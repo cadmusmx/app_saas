@@ -16,7 +16,7 @@ import 'package:gaso_tenant_app/core/logging/debug_log.dart';
 class MeService extends HttpService {
   /// GET /api/me → SessionUser. Requiere sesión (Bearer) + tenant en headers,
   /// ambos ya cableados por `HttpService.send` (autenticado).
-  Future<ServiceResponse<SessionUser>> getMe() async {
+  Future<ServiceResponse<SessionUser?>> getMe() async {
     try {
       final res = await send('GET', '/me');
 

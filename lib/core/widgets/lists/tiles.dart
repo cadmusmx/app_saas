@@ -31,8 +31,13 @@ class BaseListTile extends StatelessWidget {
 }
 
 class NavigationListTile extends BaseListTile {
-  const NavigationListTile(String title, IconData icon, void Function() onTap, {super.subtitle, super.key})
-    : super(title: title, icon: icon, trailingIcon: Icons.chevron_right, onTap: onTap);
+  const NavigationListTile(
+    String title,
+    IconData icon,
+    void Function() onTap, {
+    super.subtitle,
+    super.key,
+  }) : super(title: title, icon: icon, trailingIcon: Icons.chevron_right, onTap: onTap);
 }
 
 class ActionListTile extends BaseListTile {
@@ -56,17 +61,11 @@ class TwoActionListTile extends StatefulWidget {
   final void Function() onLeading;
   final void Function() onTrailing;
 
-  const TwoActionListTile(
-    this.title,
-    this.subtitle,
-    this.tIcon,
-    this.onLeading,
-    this.onTrailing, {
-    this.lIcon = Icons.keyboard_arrow_down,
-    this.lHasState = true,
-    this.lSelectedIcon = Icons.keyboard_arrow_up,
-    super.key,
-  });
+  const TwoActionListTile(this.title, this.subtitle, this.tIcon, this.onLeading, this.onTrailing,
+      {this.lIcon = Icons.keyboard_arrow_down,
+      this.lHasState = true,
+      this.lSelectedIcon = Icons.keyboard_arrow_up,
+      super.key});
 
   @override
   State<TwoActionListTile> createState() => _TwoActionListTileState();
@@ -110,21 +109,22 @@ class _ExpansionListTileState extends State<ExpansionListTile> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final textTheme = TextTheme.of(context);
+    final colorScheme = ColorScheme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ListTile(
-          title: Text(widget.title, style: textTheme.titleMedium),
+          title: Text(widget.title, style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
           subtitle: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            padding: const EdgeInsets.only(bottom: 8.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(widget.subtitle, style: textTheme.bodyMedium),
                 Text(
                   '${widget.children.length} registro${widget.children.length == 1 ? '' : 's'}',
-                  style: textTheme.bodyMedium,
+                  style: textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
                 ),
               ],
             ),
@@ -137,12 +137,13 @@ class _ExpansionListTileState extends State<ExpansionListTile> {
                 IconButton(
                   onPressed: () => setState(() => _selected = !_selected),
                   icon: Icon(_selected ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down),
-                ),
+                )
             ],
           ),
+          isThreeLine: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 0),
         ),
-        if (_selected) ...widget.children,
+        if (_selected) ...widget.children
       ],
     );
   }
@@ -159,7 +160,7 @@ class DrawerOption {
 class DrawerOptionAV extends AccessValidator {
   final DrawerOption option;
   DrawerOptionAV(this.option, {List<List<String>> config = AccessConfig.all, bool strict = false})
-    : super(config, strict);
+      : super(config, strict);
 }
 
 class DrawerListTile extends StatelessWidget {
@@ -171,6 +172,7 @@ class DrawerListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = TextTheme.of(context);
     return ListTile(
+      horizontalTitleGap: 8.0,
       leading: Icon(opt.icon, color: opt.released ? color : Colors.grey),
       title: Text(
         opt.title.toUpperCase(),

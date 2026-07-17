@@ -10,9 +10,15 @@ class Preferences {
 
   SharedPreferences? _preferences;
   String _user = '';
+  bool? _vmES;
+  bool? _lmRE; // null = el usuario aún no elige tipo (el form preguntará)
+  bool? _rvSrAsk;
   ThemeMode _themeMode = ThemeMode.light;
 
   String get user => _user;
+  bool? get vmES => _vmES;
+  bool? get lmRE => _lmRE;
+  bool? get rvSrAsk => _rvSrAsk;
   ThemeMode get themeMode => _themeMode;
 
   Future<void> init() async {
@@ -22,6 +28,9 @@ class Preferences {
 
   void _loadValues() {
     _user = _preferences?.getString(EPreferences.user.name) ?? '';
+    _vmES = _preferences?.getBool(EPreferences.vmES.name);
+    _lmRE = _preferences?.getBool(EPreferences.lmRE.name);
+    _rvSrAsk = _preferences?.getBool(EPreferences.rvSrAsk.name);
     _themeMode = _parseThemeMode(_preferences?.getString(EPreferences.themeMode.name));
   }
 
@@ -39,11 +48,17 @@ class Preferences {
 
   void fromMap(Map<String, dynamic> data) {
     user = data[EPreferences.user.name];
+    vmES = data[EPreferences.vmES.name];
+    lmRE = data[EPreferences.lmRE.name];
+    rvSrAsk = data[EPreferences.rvSrAsk.name];
   }
 
   Map<String, dynamic> toMap() {
     return {
       EPreferences.user.name: _user,
+      EPreferences.vmES.name: _vmES,
+      EPreferences.lmRE.name: _lmRE,
+      EPreferences.rvSrAsk.name: _rvSrAsk,
     };
   }
 
@@ -51,6 +66,22 @@ class Preferences {
     _user = user;
     _preferences?.setString(EPreferences.user.name, user);
   }
+  
+  set vmES(bool? es) {
+    _vmES = es;
+    if (es != null) _preferences?.setBool(EPreferences.vmES.name, es);
+  }
+
+  set lmRE(bool? re) {
+    _lmRE = re;
+    if (re != null) _preferences?.setBool(EPreferences.lmRE.name, re);
+  }
+
+  set rvSrAsk(bool? srAsk) {
+    _rvSrAsk = srAsk;
+    if (srAsk != null) _preferences?.setBool(EPreferences.rvSrAsk.name, srAsk);
+  }
+
 
   Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;

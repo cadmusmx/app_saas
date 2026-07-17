@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart' show DefaultCacheManager;
 import 'package:flutter_cached_pdfview/flutter_cached_pdfview.dart';
-import 'package:gaso_tenant_app/core/helpers/formatters_helper.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart' show DefaultCacheManager;
 import 'package:gaso_tenant_app/core/config/config.dart';
+import 'package:gaso_tenant_app/core/helpers/formatters_helper.dart';
 
 // Imágenes
 

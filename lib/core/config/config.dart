@@ -4,7 +4,7 @@ class Config {
   Config._();
 
   /// Entorno lógico de la app: dev | qa | prod.
-  static const AppEnv appEnv = AppEnv.dev;
+  static const AppEnv appEnv = AppEnv.qa;
 
   /// URL base de la API (leída desde .env via Env.apiUrl).
   static String get apiUrl => Env.apiUrl;

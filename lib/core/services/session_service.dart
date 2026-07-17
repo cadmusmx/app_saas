@@ -30,6 +30,6 @@ class SessionService extends HttpService {
       DebugLog.warning('updateTokenFirebase $e');
       data = 'Error inesperado, intente de nuevo mas tarde.';
     }
-    return ServiceResponse(success: data == null, data: data ?? 'OK');
+    return ServiceResponse(data == null, data: data ?? 'OK');
   }
 }

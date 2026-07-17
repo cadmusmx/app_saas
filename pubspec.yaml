@@ -31,6 +31,10 @@ dependencies:
   app_links: ^7.1.1
   flutter_secure_storage: ^10.3.1
   qr_flutter: ^4.1.0
+  file_picker: ^3.0.4
+  signature: ^6.3.0
+  aws_client: ^0.7.1
+  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:

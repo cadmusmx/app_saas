@@ -63,13 +63,13 @@ class SectionTitle extends StatelessWidget {
     final textTheme = TextTheme .of(context);
     final colorScheme = ColorScheme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.only(top: 16.0, bottom: 0.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: textTheme.titleLarge),
-          if (subtitle != null) Text(subtitle!, style: textTheme.bodyMedium?.copyWith(color: colorScheme.outline))
+          if (subtitle != null) Text(subtitle!, style: textTheme.titleMedium?.copyWith(color: colorScheme.outline))
         ],
       ),
     );

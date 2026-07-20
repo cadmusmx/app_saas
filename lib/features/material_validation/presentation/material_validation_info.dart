@@ -2,7 +2,7 @@ import 'package:gaso_tenant_app/core/widgets/info/info_letter.dart';
 
 const materialValidationLetter = InfoLetter(
   title: 'Validación',
-  summary: 'Un Sitio, Proyecto, Tipo de material, ASP - Genera QR.',
+  summary: 'Un Sitio, proyecto, tipo de material, ASP - Genera QR.',
   sections: [
     InfoLetterSection.text('Propósito',
         'Registra la entrada o salida de material de un sitio, dejando constancia del material, su estado.'),

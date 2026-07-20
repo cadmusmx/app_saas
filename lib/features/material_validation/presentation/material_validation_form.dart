@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:provider/provider.dart';
 import 'package:signature/signature.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:gaso_tenant_app/app/router/routes.dart';
@@ -41,9 +40,9 @@ import 'package:gaso_tenant_app/core/helpers/connection_helper.dart';
 import 'package:gaso_tenant_app/core/helpers/generators_helper.dart';
 import 'package:gaso_tenant_app/core/helpers/input_formatters_helper.dart';
 import 'package:gaso_tenant_app/features/material_validation/domain/material_validation.dart';
+import 'package:gaso_tenant_app/features/material_validation/domain/material_catalogs.dart';
 import 'package:gaso_tenant_app/features/material_validation/data/material_validation_service.dart';
 import 'package:gaso_tenant_app/features/material_validation/data/material_catalogs_service.dart';
-import 'package:gaso_tenant_app/features/material_validation/domain/material_catalogs.dart';
 import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_info.dart';
 
 class MaterialValidationForm extends StatefulWidget {
@@ -97,25 +96,25 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
   bool _isEdition = false;
   MaterialValidation? _material;
   bool _isBuilding = true;
+  bool _sessionReady = false;
 
   @override
   void initState() {
     super.initState();
-    try {
-      final authContext = context.watch<AuthContext>();
-      if (authContext.current != null && authContext.current?.user.id != null) {
-        _sessionUser = authContext.current!;
-        _photosFolder = '${_sessionUser.tenant.slug}/material_validation/';
-        _draftManager = DraftManager('material_validation_draft');
-        _photoManager = PhotoManager(s3Service: _s3Service, userId: _sessionUser.user.id!, photosFolder: _photosFolder);
-        _loadData();
-      } else {
+    final session = AuthContext.instance.current;
+    if (session != null && session.user.id != null) {
+      _sessionUser = session;
+      _sessionReady = true;
+      _photosFolder = '${_sessionUser.tenant.slug}/material_validation/';
+      _draftManager = DraftManager('material_validation_draft');
+      _photoManager = PhotoManager(s3Service: _s3Service, userId: _sessionUser.user.id!, photosFolder: _photosFolder);
+      _loadData();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         MessengerService.info('Ocurrió un error al obtener sus datos');
-        if (mounted) Navigator.pushReplacementNamed(context, AppRoutes.home);
-      }
-    } catch (e) {
-      DebugLog.error('mv-initState $e');
-      MessengerService.error('Ocurrió un error al cargar el formulario');
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
+      });
     }
   }
 
@@ -164,7 +163,6 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
           _tarimasForm = _material != null && _material!.numTarimas > 0;
         });
         _controllers.loadFromMap({
-          'responsable': (_material?.responsable).toClearStr(),
           'nombreSitio': (_material?.nombreSitio).toClearStr(),
           'idSitio': (_material?.idSitio).toClearStr(),
           'cuentaCliente': (_material?.cuentaCliente).toClearStr(),
@@ -183,7 +181,6 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
         }
       } else if (mounted) {
         setState(() => _regionForm = _sessionUser.user.region?.toString());
-        _controllers.setValue('responsable', _sessionUser.user.name);
         await _resolveOperationType();
       }
       final location = await _locationService.getCurrentLocation();
@@ -204,6 +201,8 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
           }
         });
       }
+      // Catálogos: 1 request (6 GET -> /catalogs), cacheado por tenant. El await
+      // elimina el race del constructor async y el Future.delayed(2s) legacy.
       _catalogs = await MaterialCatalogsCache.instance.load();
     } catch (e) {
       DebugLog.error('Error: $e');
@@ -585,7 +584,6 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
   Map<String, dynamic> _buildPayloadChanges() {
     final currentData = _controllers.toMap();
     Map<String, List<String?>> values = {
-      "responsable": [currentData['responsable'], _material?.responsable],
       "idProyecto": [_proyectoForm, _material?.idProyecto.toClearStr()],
       "idTipoMaterial": [_tipoMaterialForm, _material?.idTipoMaterial.toClearStr()],
       "nombreSitio": [currentData['nombreSitio'], _material?.nombreSitio],
@@ -938,15 +936,13 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
 
   @override
   Widget build(BuildContext context) {
+    // Sin sesión válida los `late final` (folder/draft/photoManager) no se inicializan y el post-frame ya navega fuera:
+    // muestra loader y no toques nada.
+    if (!_sessionReady) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     final colorScheme = Theme.of(context).colorScheme;
     final List<Widget> fields = [
-      TextFormField(
-        controller: _controllers.get('responsable'),
-        readOnly: _controllers.getValue('responsable').isNotEmpty,
-        decoration: inputDec('Quien ${_es ? 'recibe' : 'entrega'}'),
-        validator: (v) => FormValidators.required(v, 'responsable'),
-        inputFormatters: [LengthLimitingTextInputFormatter(50), FilteringTextInputFormatter.deny(notUsedExp)],
-      ),
       Row(
         spacing: 8,
         children: [

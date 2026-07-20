@@ -9,7 +9,7 @@ abstract class Env {
   @EnviedField(varName: 'S3_BUCKET', defaultValue: '')
   static final String s3Bucket = _Env.s3Bucket;
 
-  @EnviedField(varName: 'S3_REGION', defaultValue: '')
+  @EnviedField(varName: 'S3_REGION', defaultValue: 'us-east-1')
   static final String s3Region = _Env.s3Region;
 
   @EnviedField(varName: 'S3_ACCESS_KEY', defaultValue: '')

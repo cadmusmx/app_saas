@@ -604,10 +604,23 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
     for (var entry in values.entries) {
       if (entry.value[0] != entry.value[1]) payload.addAll({entry.key: entry.value[0]});
     }
-    final List<Map<String, String>> piezasMotivoAdd = _piezasMotivo.where((p) => p['id'] == null).toList();
-    final List<Map<String, String>> piezasEstadoFAdd = _piezasEstadoF.where((p) => p['id'] == null).toList();
-    final List<Map<String, String>> piezasMotivoEdit = _piezasMotivo.where((p) => p['edt'] != null).toList();
-    final List<Map<String, String>> piezasEstadoFEdit = _piezasEstadoF.where((p) => p['edt'] != null).toList();
+    // Formas exactas del contrato. `edt`/`clt` son marcadores internos del cliente.
+    final piezasMotivoAdd = _piezasMotivo
+        .where((p) => p['id'] == null)
+        .map((p) => {'cl': p['cl'], 'pzs': p['pzs']})
+        .toList();
+    final piezasEstadoFAdd = _piezasEstadoF
+        .where((p) => p['id'] == null)
+        .map((p) => {'cl': p['cl'], 'pzs': p['pzs']})
+        .toList();
+    final piezasMotivoEdit = _piezasMotivo
+        .where((p) => p['edt'] != null)
+        .map((p) => {'id': int.tryParse(p['id'] ?? ''), 'cl': p['cl'], 'pzs': p['pzs']})
+        .toList();
+    final piezasEstadoFEdit = _piezasEstadoF
+        .where((p) => p['edt'] != null)
+        .map((p) => {'id': int.tryParse(p['id'] ?? ''), 'cl': p['cl'], 'pzs': p['pzs']})
+        .toList();
     if (piezasMotivoAdd.isNotEmpty) payload['piezasMotivoAdd'] = piezasMotivoAdd;
     if (piezasEstadoFAdd.isNotEmpty) payload['piezasEstadoFAdd'] = piezasEstadoFAdd;
     if (piezasMotivoEdit.isNotEmpty) payload['piezasMotivoEdit'] = piezasMotivoEdit;

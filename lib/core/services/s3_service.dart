@@ -12,9 +12,9 @@ class S3Service {
   final String _accessKey = Env.s3AccessKey;
   final String _secretKey = Env.s3SecretKey;
 
-  /// Antepone el folder de entorno (`Qa/`|`Pr/`) a la llave RELATIVA que guarda
-  /// la app, para que el objeto viva donde `Config.s3Url` lo lee. Es global
-  /// (todo feature que suba hereda el prefijo) e idempotente.
+  /// Antepone el folder de entorno (`Qa/`|`Pr/`) a la llave RELATIVA que guarda la app,
+  /// para que el objeto viva donde `Config.s3Url` lo lee.
+  /// Es global (todo feature que suba hereda el prefijo) e idempotente.
   String _resolveKey(String key) {
     final folder = '${Config.s3Folder}/';
     return key.startsWith(folder) ? key : '$folder$key';
@@ -34,6 +34,8 @@ class S3Service {
   }
 
   Future<String?> _uploadToS3(Uint8List body, String key, String? contentType) async {
+    DebugLog.info(_accessKey);
+    DebugLog.info(_secretKey);
     final s3 = S3(
       region: _regionS3,
       credentials: AwsClientCredentials(accessKey: _accessKey, secretKey: _secretKey),
@@ -43,9 +45,8 @@ class S3Service {
     while (attempts < 5) {
       try {
         await s3.putObject(bucket: _bucket, key: _resolveKey(key), body: body, contentType: contentType);
-        // Devuelve la URL pública consistente con la lectura (Config.s3Url ya
-        // incluye el folder de entorno). La app guarda la llave RELATIVA (key);
-        // quien guarde la URL (p. ej. documentos) queda alineado con el display.
+        // Devuelve la URL pública consistente con la lectura (Config.s3Url ya incluye el folder de entorno).
+        // La app guarda la llave RELATIVA (key); quien guarde la URL (p. ej. documentos) queda alineado con el display.
         return '${Config.s3Url}$key';
       } catch (e) {
         attempts++;

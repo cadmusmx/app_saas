@@ -16,7 +16,6 @@ import 'package:gaso_tenant_app/core/helpers/connection_helper.dart';
 import 'package:gaso_tenant_app/core/helpers/responsive_helper.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
 import 'package:gaso_tenant_app/features/profile/presentation/widgets/profile_photo.dart';
-// import 'package:gaso_tenant_app/features/profile/presentation/additional_screen.dart';
 // import 'package:gaso_tenant_app/features/profile/presentation/account_screen.dart';
 // import 'package:gaso_tenant_app/features/profile/presentation/personal_screen.dart';
 import 'package:gaso_tenant_app/features/profile/data/profile_service.dart';
@@ -160,19 +159,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ); */
             },
           ),
-          NavigationListTile('Información adicional', subtitle: 'Sueldo, licencia, documentación', Icons.view_list, () {
-            return MessengerService.info('No disponible');
-            /* Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (context) => AdditionalScreen(
-                  idUser: _sessionUser.user.id,
-                  licenseExpiration: 'HARDCODED-licenseExpiration',
-                  salary: 'HARDCODED-salary',
-                ),
-              ),
-            ); */
-          }),
         ],
       ),
     ];

@@ -26,7 +26,6 @@ class MenuItem {
   final String readRoute; // gate: Perm.r
   final String writeRoute; // gate: kWriteMask
   final IconData icon;
-  final String image;
   final String? description;
 
   const MenuItem(
@@ -36,9 +35,14 @@ class MenuItem {
     this.readRoute,
     this.writeRoute, {
     required this.icon,
-    required this.image,
     this.description,
   });
+}
+
+class MenuGroup {
+  final String groupName;
+  final List<MenuItem> menuList;
+  MenuGroup(this.groupName, this.menuList);
 }
 
 /// Etiquetas y orden de los grupos en el shell.
@@ -53,51 +57,12 @@ const List<String> kGroupOrder = ['warehouses', 'human_capital', 'operating_expe
 
 const List<MenuItem> kMobileMenu = [
   MenuItem(
-    'warehouses',
-    'material_logistics',
-    'LOGÍSTICA DE MATERIAL',
-    AppRoutes.materialLogisticsList,
-    AppRoutes.materialLogistics,
-    icon: Icons.local_shipping,
-    image: 'assets/icons/logistics.png',
-    description: 'RECEPCIÓN Y ENTREGA',
-  ),
-  MenuItem(
-    'warehouses',
-    'material_validation',
-    'VALIDACIÓN DE MATERIAL',
-    AppRoutes.materialValidationList,
-    AppRoutes.materialValidation,
-    icon: Icons.fact_check,
-    image: 'assets/icons/package.png',
-    description: 'ENTRADA Y SALIDA',
-  ),
-  MenuItem(
-    'human_capital',
-    'vacation',
-    'VACACIONES',
-    AppRoutes.vacationLeave,
-    AppRoutes.vacationLeave,
-    icon: Icons.beach_access,
-    image: 'assets/icons/logistics.png', // pendiente
-  ),
-  MenuItem(
-    'operating_expenses',
-    'requests_expenses',
-    'SOLICITUDES DE GASTOS',
-    AppRoutes.operationExpensesList,
-    AppRoutes.operationExpenses,
-    icon: Icons.request_quote,
-    image: 'assets/icons/budget.png',
-  ),
-  MenuItem(
     'vehicles',
     'gasoline_receipt',
     'COMPROBANTES DE GASOLINA',
     AppRoutes.fuelRequestList,
     AppRoutes.fuelRequest,
-    icon: Icons.local_gas_station,
-    image: 'assets/icons/gas-station.png',
+    icon: Icons.local_gas_station_sharp,
   ),
   MenuItem(
     'vehicles',
@@ -106,7 +71,6 @@ const List<MenuItem> kMobileMenu = [
     AppRoutes.vehicleExpensesList,
     AppRoutes.vehicleExpenses,
     icon: Icons.payments,
-    image: 'assets/icons/budget.png', // pendiente
   ),
   MenuItem(
     'vehicles',
@@ -114,8 +78,7 @@ const List<MenuItem> kMobileMenu = [
     'RESPONSIVAS VEHICULARES',
     AppRoutes.vehicleLiabilityList,
     AppRoutes.vehicleLiability,
-    icon: Icons.assignment,
-    image: 'assets/icons/car-document.png',
+    icon: Icons.fact_check_sharp,
     description: 'RESPONSABILIDAD Y SERVICIOS',
   ),
   MenuItem(
@@ -124,8 +87,41 @@ const List<MenuItem> kMobileMenu = [
     'KILOMETRAJE SEMANAL',
     AppRoutes.weeklyMileageList,
     AppRoutes.weeklyMileage,
-    icon: Icons.speed,
-    image: 'assets/icons/odometer.png',
+    icon: Icons.speed_sharp,
+  ),
+  MenuItem(
+    'human_capital',
+    'vacation',
+    'VACACIONES Y PERMISOS',
+    AppRoutes.vacationLeave,
+    AppRoutes.vacationLeave,
+    icon: Icons.beach_access_sharp,
+  ),
+  MenuItem(
+    'operating_expenses',
+    'requests_expenses',
+    'SOLICITUDES DE GASTOS',
+    AppRoutes.operationExpensesList,
+    AppRoutes.operationExpenses,
+    icon: Icons.request_quote_sharp,
+  ),
+  MenuItem(
+    'warehouses',
+    'material_logistics',
+    'LOGÍSTICA DE MATERIAL',
+    AppRoutes.materialLogisticsList,
+    AppRoutes.materialLogistics,
+    icon: Icons.move_up_sharp,
+    description: 'RECEPCIÓN Y ENTREGA A VARIOS SITIOS',
+  ),
+  MenuItem(
+    'warehouses',
+    'material_validation',
+    'VALIDACIÓN DE MATERIAL',
+    AppRoutes.materialValidationList,
+    AppRoutes.materialValidation,
+    icon: Icons.inventory_sharp,
+    description: 'ENTRADA Y SALIDA POR PROYECTO',
   ),
 ];
 
@@ -145,12 +141,13 @@ List<MenuItem> visibleMenu(AuthContext auth) => kMobileMenu.where((it) => _isVis
 
 /// Vistas visibles agrupadas y ordenadas por `kGroupOrder`. Solo incluye
 /// grupos con ≥1 vista visible (grupos vacíos no se muestran).
-Map<String, List<MenuItem>> groupedMenu(AuthContext auth) {
+List<MenuGroup> groupedMenu(AuthContext auth) {
   final visible = visibleMenu(auth);
-  final out = <String, List<MenuItem>>{};
+  final List<MenuGroup> out = [];
   for (final group in kGroupOrder) {
     final items = visible.where((it) => it.group == group).toList(growable: false);
-    if (items.isNotEmpty) out[group] = items;
+    if (items.isNotEmpty) out.add(MenuGroup(group, items));
   }
+  out.sort((mg1, mg2) => mg1.menuList.length - mg2.menuList.length);
   return out;
 }

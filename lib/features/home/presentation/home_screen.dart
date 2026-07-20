@@ -142,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Image.asset(item.image, width: 32, height: 32, color: colorScheme.primary),
+                        Image.asset('assets/icons/${item.viewCode}.png', width: 32, height: 32, color: colorScheme.primary),
                         SizedBox(height: 8.0),
                         Text(
                           item.label,

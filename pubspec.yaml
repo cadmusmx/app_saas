@@ -24,16 +24,16 @@ dependencies:
   path_provider: ^2.1.5
   geolocator: ^14.0.2
   flutter_staggered_grid_view: ^0.7.0
-  package_info_plus: ^10.1.0
+  package_info_plus: ^9.0.1
   url_launcher: ^6.3.2
   flutter_cache_manager: ^3.4.1
   flutter_cached_pdfview: ^0.4.3
   app_links: ^7.1.1
   flutter_secure_storage: ^10.3.1
   qr_flutter: ^4.1.0
-  file_picker: ^3.0.4
+  file_picker: ^10.0.0
   signature: ^6.3.0
-  aws_client: ^0.7.1
+  aws_client: ^0.9.3
   path: ^1.9.1
 
 dev_dependencies:

@@ -1,18 +1,16 @@
 // ignore_for_file: constant_identifier_names
 import 'dart:convert';
 
-enum MaterialValidationSPKeys {
-  warehousesMV,
-  projectsMV,
-  materialTypesMV,
-  reasonsVM,
-  carriersVM,
-  physicalStatusVM,
-}
-
+/// Nombres de columna de la cabecera **tal cual los emite la DB/BFF** (`/search` y `/{folio}` devuelven PascalCase).
+/// Confirmado: `ES` y `OtroCarrier` viajan con ese nombre exacto.
+///
+/// El *valor* sí se coerciona defensivamente: un `bit` SQL puede llegar como `1/0` en vez de `true/false`
+/// (mismo motivo por el que `session_user` usa `_asBool` para `isActive`), y las columnas nullable no deben tumbar el parseo.
+///
+/// El enum legacy `MaterialValidationSPKeys` se eliminó: los catálogos ya no se cachean por spKey global (viven en `MaterialCatalogsCache`).
 enum EMaterialValidation {
   Id,
-  IdUsuario,
+  IdUsuario, // dueño del registro (solo lectura; gatea la edición por pertenencia)
   Folio,
   Responsable,
   IdProyecto,
@@ -50,10 +48,16 @@ enum EMaterialValidation {
   NumTarimas,
   Tarimas,
   Cancelada,
+  Vinculado, // Id del vínculo o null (viene en /search y /{folio})
 }
 
 class MaterialValidation {
   final int id;
+
+  /// Dueño del registro (columna `IdUsuario`). **Solo lectura**:
+  ///   se usa para mostrar *Editar* únicamente al dueño (misma regla que legacy).
+  /// NO se envía en payloads: la identidad del actor sale del token.
+  final int? idUsuario;
   final String folio;
   final String responsable; // Quien recibe/entrega GASO
   final int idProyecto;
@@ -92,8 +96,13 @@ class MaterialValidation {
   final Map<String, dynamic> tarimas;
   final bool cancelada;
 
+  /// Id del vínculo o `null`. Permite saber si el folio ya está vinculado sin pegarle a `GET /linked`
+  /// (el server ya lo trae en `/search` y `/{folio}`).
+  final int? vinculado;
+
   MaterialValidation({
     required this.id,
+    required this.idUsuario,
     required this.folio,
     required this.responsable,
     required this.idProyecto,
@@ -131,46 +140,108 @@ class MaterialValidation {
     required this.numTarimas,
     required this.tarimas,
     required this.cancelada,
+    required this.vinculado,
   });
 
-  factory MaterialValidation.fromJson(Map<String, dynamic> json) => MaterialValidation(
-        id: json[EMaterialValidation.Id.name],
-        folio: json[EMaterialValidation.Folio.name],
-        responsable: json[EMaterialValidation.Responsable.name],
-        idProyecto: json[EMaterialValidation.IdProyecto.name],
-        proyecto: json[EMaterialValidation.Proyecto.name],
-        idTipoMaterial: json[EMaterialValidation.IdTipoMaterial.name],
-        nombreSitio: json[EMaterialValidation.NombreSitio.name],
-        idSitio: json[EMaterialValidation.IdSitio.name],
-        cuentaCliente: json[EMaterialValidation.CuentaCliente.name],
-        fecha: json[EMaterialValidation.Fecha.name],
-        aspNombre: json[EMaterialValidation.AspNombre.name],
-        aspFirma: json[EMaterialValidation.AspFirma.name],
-        nombreContacto: json[EMaterialValidation.NombreContacto.name],
-        idCarrier: json[EMaterialValidation.IdCarrier.name],
-        carrier: json[EMaterialValidation.Carrier.name],
-        otroCarrier: json[EMaterialValidation.OtroCarrier.name],
-        idRegion: json[EMaterialValidation.IdRegion.name],
-        almacenDestino: json[EMaterialValidation.AlmacenDestino.name],
-        idAlmacenDestino: json[EMaterialValidation.IdAlmacenDestino.name],
-        totalPiezas: json[EMaterialValidation.TotalPiezas.name],
-        placasTransporte: json[EMaterialValidation.PlacasTransporte.name],
-        piezasMotivo: jsonDecode(json[EMaterialValidation.PiezasMotivo.name] ?? '[]'),
-        piezasEstadoF: jsonDecode(json[EMaterialValidation.PiezasEstadoF.name] ?? '[]'),
-        documentos: jsonDecode(json[EMaterialValidation.MaterialDocumentos.name] ?? '[]'),
-        materialEnTransporteFoto: json[EMaterialValidation.MaterialEnTransporteFoto.name],
-        materialDescargadoFoto: json[EMaterialValidation.MaterialDescargadoFoto.name],
-        transporteFoto: json[EMaterialValidation.TransporteFoto.name],
-        placasFoto: json[EMaterialValidation.PlacasFoto.name],
-        notas: json[EMaterialValidation.Notas.name] ?? '',
-        qr: json[EMaterialValidation.Qr.name],
-        fechaCaptura: json[EMaterialValidation.FechaCaptura.name] ?? '',
-        tipoMaterial: json[EMaterialValidation.TipoMaterial.name],
-        status: json[EMaterialValidation.Status.name],
-        es: json[EMaterialValidation.ES.name],
-        fechaEdicion: json[EMaterialValidation.FechaEdicion.name],
-        numTarimas: json[EMaterialValidation.NumTarimas.name],
-        tarimas: jsonDecode(json[EMaterialValidation.Tarimas.name] ?? '{}'),
-        cancelada: json[EMaterialValidation.Cancelada.name],
-      );
+  /// `true` si el registro pertenece a [userId]. Base de la regla "solo el dueño edita" que consume la lista para mostrar/ocultar *Editar*.
+  bool isOwnedBy(int? userId) => idUsuario != null && userId != null && idUsuario == userId;
+
+  factory MaterialValidation.fromJson(Map<String, dynamic> json) {
+    String k(EMaterialValidation e) => e.name;
+    return MaterialValidation(
+      id: _asInt(json[k(EMaterialValidation.Id)]) ?? 0,
+      idUsuario: _asInt(json[k(EMaterialValidation.IdUsuario)]),
+      folio: _str(json[k(EMaterialValidation.Folio)]),
+      responsable: _str(json[k(EMaterialValidation.Responsable)]),
+      idProyecto: _asInt(json[k(EMaterialValidation.IdProyecto)]) ?? 0,
+      proyecto: _str(json[k(EMaterialValidation.Proyecto)]),
+      idTipoMaterial: _asInt(json[k(EMaterialValidation.IdTipoMaterial)]) ?? 0,
+      nombreSitio: _str(json[k(EMaterialValidation.NombreSitio)]),
+      idSitio: _str(json[k(EMaterialValidation.IdSitio)]),
+      cuentaCliente: _str(json[k(EMaterialValidation.CuentaCliente)]),
+      fecha: _str(json[k(EMaterialValidation.Fecha)]),
+      aspNombre: _str(json[k(EMaterialValidation.AspNombre)]),
+      aspFirma: _str(json[k(EMaterialValidation.AspFirma)]),
+      nombreContacto: _str(json[k(EMaterialValidation.NombreContacto)]),
+      idCarrier: _asInt(json[k(EMaterialValidation.IdCarrier)]) ?? 0,
+      carrier: _str(json[k(EMaterialValidation.Carrier)]),
+      otroCarrier: _strN(json[k(EMaterialValidation.OtroCarrier)]),
+      idRegion: _asInt(json[k(EMaterialValidation.IdRegion)]) ?? 0,
+      almacenDestino: _str(json[k(EMaterialValidation.AlmacenDestino)]),
+      idAlmacenDestino: _asInt(json[k(EMaterialValidation.IdAlmacenDestino)]) ?? 0,
+      totalPiezas: _asInt(json[k(EMaterialValidation.TotalPiezas)]) ?? 0,
+      placasTransporte: _str(json[k(EMaterialValidation.PlacasTransporte)]),
+      piezasMotivo: _decodeList(json[k(EMaterialValidation.PiezasMotivo)]),
+      piezasEstadoF: _decodeList(json[k(EMaterialValidation.PiezasEstadoF)]),
+      documentos: _decodeList(json[k(EMaterialValidation.MaterialDocumentos)]),
+      materialEnTransporteFoto: _str(json[k(EMaterialValidation.MaterialEnTransporteFoto)]),
+      materialDescargadoFoto: _strN(json[k(EMaterialValidation.MaterialDescargadoFoto)]),
+      transporteFoto: _str(json[k(EMaterialValidation.TransporteFoto)]),
+      placasFoto: _str(json[k(EMaterialValidation.PlacasFoto)]),
+      notas: _str(json[k(EMaterialValidation.Notas)]),
+      qr: _str(json[k(EMaterialValidation.Qr)]),
+      fechaCaptura: _str(json[k(EMaterialValidation.FechaCaptura)]),
+      tipoMaterial: _str(json[k(EMaterialValidation.TipoMaterial)]),
+      status: _asInt(json[k(EMaterialValidation.Status)]) ?? 0,
+      es: _asBool(json[k(EMaterialValidation.ES)]),
+      fechaEdicion: _strN(json[k(EMaterialValidation.FechaEdicion)]),
+      numTarimas: _asInt(json[k(EMaterialValidation.NumTarimas)]) ?? 0,
+      tarimas: _decodeMap(json[k(EMaterialValidation.Tarimas)]),
+      cancelada: _asBool(json[k(EMaterialValidation.Cancelada)]),
+      vinculado: _asInt(json[k(EMaterialValidation.Vinculado)]),
+    );
+  }
+}
+
+// -- Coerciones tolerantes (el BFF/SQL pueden serializar de varias formas) --
+
+int? _asInt(dynamic v) {
+  if (v is int) return v;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v);
+  return null;
+}
+
+/// Acepta true / 1 / '1' / 'true' (un `bit` SQL puede llegar como 0/1).
+bool _asBool(dynamic v) {
+  if (v is bool) return v;
+  if (v is num) return v == 1;
+  if (v is String) {
+    final s = v.trim().toLowerCase();
+    return s == '1' || s == 'true';
+  }
+  return false;
+}
+
+String _str(dynamic v) => v?.toString() ?? '';
+String? _strN(dynamic v) => v?.toString();
+
+/// `PiezasMotivo`/`PiezasEstadoF`/`MaterialDocumentos` llegan como **string JSON**
+/// (`FOR JSON PATH`). Tolerante por si el BFF alguna vez los manda ya parseados.
+List<dynamic> _decodeList(dynamic v) {
+  if (v == null) return const [];
+  if (v is List) return v;
+  if (v is String) {
+    try {
+      final d = jsonDecode(v.isEmpty ? '[]' : v);
+      return d is List ? d : const [];
+    } catch (_) {
+      return const [];
+    }
+  }
+  return const [];
+}
+
+Map<String, dynamic> _decodeMap(dynamic v) {
+  if (v == null) return const {};
+  if (v is Map) return v.cast<String, dynamic>();
+  if (v is String) {
+    try {
+      final d = jsonDecode(v.isEmpty ? '{}' : v);
+      return d is Map ? d.cast<String, dynamic>() : const {};
+    } catch (_) {
+      return const {};
+    }
+  }
+  return const {};
 }

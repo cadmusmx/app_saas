@@ -18,7 +18,7 @@ class MeService extends HttpService {
   /// ambos ya cableados por `HttpService.send` (autenticado).
   Future<ServiceResponse<SessionUser?>> getMe() async {
     try {
-      final res = await send('GET', '/me');
+      final res = await send('GET', 'me');
 
       final body = jsonDecode(res.body);
       if (body is! Map) {

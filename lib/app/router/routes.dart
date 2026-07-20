@@ -11,6 +11,10 @@ import 'package:gaso_tenant_app/features/auth/presentation/mfa_screen.dart';
 import 'package:gaso_tenant_app/features/auth/presentation/mfa_setup_screen.dart';
 import 'package:gaso_tenant_app/features/support/presentation/support_screen.dart';
 import 'package:gaso_tenant_app/features/home/presentation/home_screen.dart';
+import 'package:gaso_tenant_app/features/material_validation/domain/material_validation.dart';
+import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_detail.dart';
+import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_form.dart';
+import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_list.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -107,16 +111,15 @@ final Map<String, WidgetBuilder> appRoutes = {
   },
   AppRoutes.fuelRequestList: (_) => const RbacGate(viewCode: 'gasoline_receipt', child: EnProceso()),
   AppRoutes.materialValidation: (_) {
-    return const RbacGate(viewCode: 'material_validation', require: kWriteMask, child: EnProceso());
+    return const RbacGate(viewCode: 'material_validation', require: kWriteMask, child: MaterialValidationForm());
   },
-  AppRoutes.materialValidationList: (_) => const RbacGate(viewCode: 'material_validation', child: EnProceso()),
+  AppRoutes.materialValidationList: (_) => const RbacGate(viewCode: 'material_validation', child: MaterialValidationList()),
   AppRoutes.materialValidationDetail: (context) {
-    // final args = ModalRoute.of(context)!.settings.arguments;
-    // final folio = args is String ? args : null;
-    // final material = args is MaterialValidation ? args : null;
-    
-    // child: MaterialValidationDetail(folio: folio, materialValidation: material)
-    return const RbacGate(viewCode: 'material_validation', child: EnProceso());
+    final args = ModalRoute.of(context)!.settings.arguments;
+    final folio = args is String ? args : null;
+    final material = args is MaterialValidation ? args : null;
+
+    return RbacGate(viewCode: 'material_validation', child: MaterialValidationDetail(folio: folio, materialValidation: material));
   },
   AppRoutes.materialLogistics: (context) {
     // final args = ModalRoute.of(context)!.settings.arguments;

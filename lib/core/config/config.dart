@@ -9,11 +9,14 @@ class Config {
   /// URL base de la API (leída desde .env via Env.apiUrl).
   static String get apiUrl => Env.apiUrl;
 
-  /// Carpeta S3 depende del entorno
-  static String get _s3Folder => appEnv == AppEnv.prod ? 'Pr' : 'Qa';
+  /// Carpeta S3 por entorno (`Qa`/`Pr`). Se antepone a TODA llave de objeto:
+  /// la escritura la resuelve `S3Service`; la lectura la antepone `s3Url`.
+  static String get s3Folder => appEnv == AppEnv.prod ? 'Pr' : 'Qa';
 
-  /// URL S3
-  static String get s3Url => 'https://${Env.s3Bucket}.s3.us-east-1.amazonaws.com/$_s3Folder/';
+  /// Base pública de S3 (lectura). Incluye el folder de entorno y toma la región
+  /// de `Env.s3Region` —la misma que usa `S3Service` al escribir— para que la URL
+  /// de lectura apunte exactamente a donde quedó el objeto.
+  static String get s3Url => 'https://${Env.s3Bucket}.s3.${Env.s3Region}.amazonaws.com/$s3Folder/';
 
   /// Header de tenant que espera el BFF.
   static const String tenantHeaderName = 'x-tenant-slug';

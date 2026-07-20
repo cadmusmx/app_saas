@@ -5,7 +5,7 @@ import 'package:gaso_tenant_app/core/http/http_service.dart';
 import 'package:gaso_tenant_app/core/http/service_response.dart';
 
 class SessionService extends HttpService { 
-  /// TODO: guardar y enviar el token de Firebase
+  /// Guardar y enviar el token de Firebase
   Future<ServiceResponse<String>> updateTokenFirebase(String token) async {
     String? data;
     try {

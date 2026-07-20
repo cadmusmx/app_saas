@@ -297,14 +297,14 @@ class _AuthApi extends HttpService {
   /// POST /api/auth-mfa/start  { username, password }  (+ x-tenant-slug)
   ///   → { ok, requiresMfa, requiresMfaSetup, challengeId?, factorType }
   Future<Map<String, dynamic>> startMfaChallenge(String username, String password) async {
-    final res = await send('POST', '/auth-mfa/start', body: {'username': username, 'password': password});
+    final res = await send('POST', 'auth-mfa/start', body: {'username': username, 'password': password});
     return jsonDecode(res.body) as Map<String, dynamic>;
   }
 
   /// POST /api/auth-mfa/setup/start  { username, password }
   ///   → { ok, setupId, otpauthUrl, manualKey } | { ok, alreadyConfigured }
   Future<Map<String, dynamic>> startMfaSetup(String username, String password) async {
-    final res = await send('POST', '/auth-mfa/setup/start', body: {'username': username, 'password': password});
+    final res = await send('POST', 'auth-mfa/setup/start', body: {'username': username, 'password': password});
     return jsonDecode(res.body) as Map<String, dynamic>;
   }
 
@@ -313,7 +313,7 @@ class _AuthApi extends HttpService {
   Future<Map<String, dynamic>> verifyLogin(String username, String password, String challengeId, String mfaCode) async {
     final res = await send(
       'POST',
-      '/mobile/login',
+      'mobile/login',
       body: {'username': username, 'password': password, 'challengeId': challengeId, 'mfaCode': mfaCode},
     );
     return jsonDecode(res.body) as Map<String, dynamic>;
@@ -324,7 +324,7 @@ class _AuthApi extends HttpService {
   Future<Map<String, dynamic>> verifyMfaSetup(String username, String password, String setupId, String mfaCode) async {
     final res = await send(
       'POST',
-      '/auth-mfa/setup/verify',
+      'auth-mfa/setup/verify',
       body: {'username': username, 'password': password, 'setupId': setupId, 'mfaCode': mfaCode},
     );
     return jsonDecode(res.body) as Map<String, dynamic>;

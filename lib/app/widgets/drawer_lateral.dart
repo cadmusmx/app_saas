@@ -22,8 +22,8 @@ class DrawerLateral extends StatefulWidget implements PreferredSizeWidget {
 class _DrawerLateralState extends State<DrawerLateral> {
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthContext>();
-    final groups = groupedMenu(auth); // Map<group, List<MenuItem>> ya filtrado y ORDENADO
+    final AuthContext auth = context.watch<AuthContext>();
+    final List<MenuGroup> groups = groupedMenu(auth); // Map<group, List<MenuItem>> ya filtrado y ORDENADO
     final user = auth.current;
 
     final ColorScheme colorScheme = ColorScheme.of(context);
@@ -70,23 +70,23 @@ class _DrawerLateralState extends State<DrawerLateral> {
             ),
           ),
           DrawerListTile(
-            DrawerOption(path: AppRoutes.profile, title: 'Perfil', icon: Icons.person_sharp, released: false),
+            DrawerOption(path: AppRoutes.profile, title: 'PERFIL', icon: Icons.person_sharp, released: false),
             colorScheme.primary,
           ),
-          ...groups.entries.map(
-            (groupEntry) => groupEntry.value.length == 1
+          ...groups.map(
+            (group) => group.menuList.length == 1
                 ? DrawerListTile(
                     DrawerOption(
-                      path: groupEntry.value.first.readRoute,
-                      title: groupEntry.value.first.label,
-                      icon: groupEntry.value.first.icon,
+                      path: group.menuList.first.readRoute,
+                      title: group.menuList.first.label,
+                      icon: group.menuList.first.icon,
                     ),
                     colorScheme.primary,
                   )
                 : ExpansionTile(
                     shape: const Border(),
-                    title: Text(kGroupLabels[groupEntry.key] ?? 'MÁS OPCIONES', style: textTheme.bodyMedium),
-                    children: groupEntry.value
+                    title: Text(kGroupLabels[group.groupName] ?? 'MÁS OPCIONES', style: textTheme.bodyMedium),
+                    children: group.menuList
                         .map(
                           (item) => DrawerListTile(
                             DrawerOption(path: item.readRoute, title: item.label, icon: item.icon),
@@ -98,7 +98,7 @@ class _DrawerLateralState extends State<DrawerLateral> {
           ),
           Divider(),
           DrawerListTile(
-            DrawerOption(path: AppRoutes.support, title: 'Soporte técnico', icon: Icons.support_agent),
+            DrawerOption(path: AppRoutes.support, title: 'SOPORTE TÉCNICO', icon: Icons.support_agent_sharp),
             colorScheme.primary,
           ),
           Consumer<ThemeService>(

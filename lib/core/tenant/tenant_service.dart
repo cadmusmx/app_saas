@@ -17,7 +17,7 @@ class TenantService extends HttpService {
   /// - red/otro   → ServiceResponse.error(...)
   Future<ServiceResponse<Tenant?>> resolve(String slug) async {
     try {
-      final res = await sendNoTenant('GET', '/internal/resolve-tenant', body: {'domain': slug});
+      final res = await sendNoTenant('GET', 'internal/resolve-tenant', body: {'domain': slug});
       final body = jsonDecode(res.body) as Map<String, dynamic>;
 
       final raw = body['tenant'];

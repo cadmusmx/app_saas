@@ -9,6 +9,7 @@ import 'package:gaso_tenant_app/core/widgets/selection/options.dart';
 import 'package:gaso_tenant_app/core/widgets/media/visual_dialogs.dart';
 import 'package:gaso_tenant_app/core/selection/selection_list.dart';
 import 'package:gaso_tenant_app/core/services/messenger_service.dart';
+import 'package:gaso_tenant_app/core/logging/debug_log.dart';
 import 'package:gaso_tenant_app/core/storage/preferences.dart';
 import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:gaso_tenant_app/core/helpers/formatters_helper.dart';
@@ -16,7 +17,8 @@ import 'package:gaso_tenant_app/core/list/base_list_screen.dart';
 import 'package:gaso_tenant_app/features/material_validation/data/material_validation_service.dart';
 import 'package:gaso_tenant_app/features/material_validation/domain/material_validation.dart';
 import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_form.dart';
-import 'package:gaso_tenant_app/features/material_validation/data/selection_lists.dart';
+import 'package:gaso_tenant_app/features/material_validation/data/material_catalogs_service.dart';
+import 'package:gaso_tenant_app/features/material_validation/domain/material_catalogs.dart';
 
 class MaterialValidationList extends StatefulWidget {
   const MaterialValidationList({super.key});
@@ -27,8 +29,7 @@ class MaterialValidationList extends StatefulWidget {
 
 class _MaterialValidationListState extends BaseListScreen<MaterialValidationList, MaterialValidation> {
   final MaterialValidationService _materialService = MaterialValidationService();
-  final ProjectsSL _tiposVMSL = ProjectsSL();
-  final MaterialTypesSL _condicionesVMSL = MaterialTypesSL();
+  MaterialCatalogs? _catalogs;
   final Preferences _preferences = Preferences();
   final ValueNotifier<String?> _type = ValueNotifier(null);
   final ValueNotifier<String?> _condition = ValueNotifier(null);
@@ -57,6 +58,11 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
       // Si nunca ha elegido (lmRE == null), arranca en Recepciones sin persistir.
       setState(() => _es = _preferences.vmES ?? true);
     }
+    try {
+      _catalogs = await MaterialCatalogsCache.instance.load();
+    } catch (e) {
+      DebugLog.warning('catalogs (lista): $e');
+    }
   }
 
   @override
@@ -66,16 +72,18 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
 
   @override
   Future<List<MaterialValidation>> fetchData() async {
-    final formData = <String, dynamic>{
-      'idUsuario': sessionUser.user.id,
-      'tipo': _type.value,
-      'condition': _condition.value,
+    // Listado general del tenant (Perm.R): NO se filtra por idUsuario; se ven
+    // todos los registros. La edición sigue gateada al dueño en cada item.
+    // Los filtros "Tipo"/"Condición" de la UI son en realidad proyecto/tipoMaterial.
+    final filters = <String, dynamic>{
       'es': _es,
+      'proyecto': int.tryParse(_type.value ?? ''),
+      'tipoMaterial': int.tryParse(_condition.value ?? ''),
     };
-    formData.removeWhere((key, value) => value == null);
-    final response = await _materialService.getRecords(formData, limit: limit, page: currentPage, sort: _sort.value);
+    filters.removeWhere((key, value) => value == null);
+    final response = await _materialService.getRecords(filters, limit: limit, page: currentPage, sort: _sort.value);
     if (!response.success) MessengerService.error(response.message);
-    return response.data!;
+    return response.data ?? [];
   }
 
   @override
@@ -105,13 +113,13 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
       children: [
         OptionSelector<String?>(
           title: 'Tipo',
-          optionsMap: _tiposVMSL.list.toTVMap(),
+          optionsMap: (_catalogs?.projects ?? const <OptionSL>[]).toTVMap(),
           valueNotifier: _type,
           clearValue: null,
         ),
         OptionSelector<String?>(
           title: 'Condición',
-          optionsMap: _condicionesVMSL.list.toTVMap(),
+          optionsMap: (_catalogs?.materialTypes ?? const <OptionSL>[]).toTVMap(),
           valueNotifier: _condition,
           clearValue: null,
         ),
@@ -310,7 +318,8 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
             if (vm.documentos.isNotEmpty) const PopupMenuItem(value: 'documents', child: Text('Documentos')),
             if (vm.tarimas.entries.isNotEmpty) const PopupMenuItem(value: 'pallets', child: Text('Tarimas')),
             const PopupMenuItem(value: 'qr', child: Text('QR')),
-            if (vm.status == 0 && !vm.cancelada) const PopupMenuItem(value: 'edit', child: Text('Editar')),
+            if (vm.status == 0 && !vm.cancelada && vm.isOwnedBy(sessionUser.user.id))
+              const PopupMenuItem(value: 'edit', child: Text('Editar')),
           ],
         ),
         onTap: () => _showDetails(vm),

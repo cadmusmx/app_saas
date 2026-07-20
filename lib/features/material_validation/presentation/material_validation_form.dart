@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gaso_tenant_app/core/auth/session_user.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +9,7 @@ import 'package:signature/signature.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:gaso_tenant_app/app/router/routes.dart';
 import 'package:gaso_tenant_app/app/widgets/appbar_header.dart';
+import 'package:gaso_tenant_app/core/auth/session_user.dart';
 import 'package:gaso_tenant_app/core/auth/auth_context.dart';
 import 'package:gaso_tenant_app/core/forms/signature_validator.dart';
 import 'package:gaso_tenant_app/core/forms/controllers_manager.dart';
@@ -42,7 +42,8 @@ import 'package:gaso_tenant_app/core/helpers/generators_helper.dart';
 import 'package:gaso_tenant_app/core/helpers/input_formatters_helper.dart';
 import 'package:gaso_tenant_app/features/material_validation/domain/material_validation.dart';
 import 'package:gaso_tenant_app/features/material_validation/data/material_validation_service.dart';
-import 'package:gaso_tenant_app/features/material_validation/data/selection_lists.dart';
+import 'package:gaso_tenant_app/features/material_validation/data/material_catalogs_service.dart';
+import 'package:gaso_tenant_app/features/material_validation/domain/material_catalogs.dart';
 import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_info.dart';
 
 class MaterialValidationForm extends StatefulWidget {
@@ -60,12 +61,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
   final S3Service _s3Service = S3Service();
   final Preferences _preferences = Preferences();
   final LocationService _locationService = LocationService();
-  final ProjectsSL _projectsSL = ProjectsSL();
-  final MaterialTypesSL _materialTypesSL = MaterialTypesSL();
-  final ReasonsSL _reasonsSL = ReasonsSL();
-  final PhysicalStatusSL _physicalStatusSL = PhysicalStatusSL();
-  final WarehousesSL _warehousesSL = WarehousesSL();
-  final CarriersSL _carriersSL = CarriersSL();
+  MaterialCatalogs? _catalogs;
   final QrService _qrService = QrService();
   final _controllers = ControllersManager();
   late final PhotoManager _photoManager;
@@ -111,11 +107,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
         _sessionUser = authContext.current!;
         _photosFolder = '${_sessionUser.tenant.slug}/material_validation/';
         _draftManager = DraftManager('material_validation_draft');
-        _photoManager = PhotoManager(
-          s3Service: _s3Service,
-          userId: _sessionUser.user.id!,
-          photosFolder: _photosFolder,
-        );
+        _photoManager = PhotoManager(s3Service: _s3Service, userId: _sessionUser.user.id!, photosFolder: _photosFolder);
         _loadData();
       } else {
         MessengerService.info('Ocurrió un error al obtener sus datos');
@@ -212,12 +204,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
           }
         });
       }
-      if (_projectsSL.list.isEmpty ||
-          _materialTypesSL.list.isEmpty ||
-          _reasonsSL.list.isEmpty ||
-          _physicalStatusSL.list.isEmpty) {
-        await Future.delayed(Duration(seconds: 2));
-      }
+      _catalogs = await MaterialCatalogsCache.instance.load();
     } catch (e) {
       DebugLog.error('Error: $e');
       MessengerService.error('Ocurrió un error al obtener los datos requeridos');
@@ -452,6 +439,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
       if (!docsOk) return false;
     }
     final payload = _buildPayload();
+    payload['es'] = _es; // el server ya no lo infiere del método; va en el body
     payload['folio'] = folio;
     payload['firmaBase64'] = aspB64;
     payload['qr'] = qrPath;
@@ -463,7 +451,10 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
       payload['tarimas'] = jsonEncode(tarimasUrls);
       payload['numTarimas'] = _controllers.getValue('numTarimas');
     }
-    final success = await _handleRequest(() => _materialValidationService.materialValidation(payload, _es, _isEdition));
+    final success = await _handleRequest(
+      () => _materialValidationService.createRecord(payload),
+      '${_es ? 'Entrada' : 'Salida'} de material creada exitosamente.',
+    );
     return success;
   }
 
@@ -533,21 +524,22 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
       final docsLimpio = _documentos.map((d) => {'name': d['name']!, 'file': d['file']!}).toList();
       formData['materialDocumentos'] = jsonEncode(docsLimpio);
     }
-    if (formData.length <= 2) {
+    if (formData.isEmpty) {
       MessengerService.info('No se hicieron cambios.');
       return null;
     }
     final success = await _handleRequest(
-      () => _materialValidationService.materialValidation(formData, _es, _isEdition),
+      () => _materialValidationService.updateRecord(_material!.folio, formData),
+      '${_es ? 'Entrada' : 'Salida'} de material actualizada exitosamente.',
     );
     if (!success) return null;
     return _esChanged ? formData['folio'] as String? : '';
   }
 
-  Future<bool> _handleRequest(Future<ServiceResponse<String>> Function() action) async {
+  Future<bool> _handleRequest<T>(Future<ServiceResponse<T>> Function() action, String successMsg) async {
     final response = await action();
     if (response.success) {
-      MessengerService.success(response.message);
+      MessengerService.success(successMsg);
     } else {
       MessengerService.error(response.message);
     }
@@ -575,7 +567,6 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
     final data = _controllers.toMap();
     final docsLimpio = _documentos.map((d) => {'name': d['name']!, 'file': d['file']!}).toList();
     return {
-      "idUsuario": _sessionUser.user.id,
       "idProyecto": _proyectoForm,
       "idTipoMaterial": _tipoMaterialForm,
       "fecha": _fechaForm.toIso8601String(),
@@ -611,7 +602,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
       "placasTransporte": [currentData['placasTransporte'], _material?.placasTransporte],
       "notas": [currentData['notas'], _material?.notas],
     };
-    Map<String, dynamic> payload = {"idUsuario": _sessionUser.user.id, "idMaterial": _material?.id};
+    final Map<String, dynamic> payload = {};
     for (var entry in values.entries) {
       if (entry.value[0] != entry.value[1]) payload.addAll({entry.key: entry.value[0]});
     }
@@ -634,7 +625,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
     await _addEditPiezas(
       _piezasMotivo,
       _piezasMotivoDel,
-      _reasonsSL.list,
+      _catalogs?.reasons ?? const <OptionSL>[],
       'Motivo',
       index,
       currentClave,
@@ -648,7 +639,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
     await _addEditPiezas(
       _piezasEstadoF,
       _piezasEstadoFDel,
-      _physicalStatusSL.list,
+      _catalogs?.physicalStatus ?? const <OptionSL>[],
       'Estado físico',
       index,
       currentClave,
@@ -1019,7 +1010,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
         isExpanded: true,
         initialValue: _proyectoForm,
         items: [
-          for (var t in _projectsSL.list)
+          for (var t in _catalogs?.projects ?? const <OptionSL>[])
             DropdownMenuItem(
               value: t.value,
               child: Text(t.text, overflow: TextOverflow.ellipsis, maxLines: 1),
@@ -1033,7 +1024,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
         isExpanded: true,
         initialValue: _tipoMaterialForm,
         items: [
-          for (var c in _materialTypesSL.list)
+          for (var c in _catalogs?.materialTypes ?? const <OptionSL>[])
             DropdownMenuItem(
               value: c.value,
               child: Text(c.text, overflow: TextOverflow.ellipsis, maxLines: 1),
@@ -1099,7 +1090,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
               isExpanded: true,
               initialValue: _destinoForm,
               items: [
-                for (var t in _warehousesSL.list)
+                for (var t in _catalogs?.warehouses ?? const <OptionSL>[])
                   DropdownMenuItem(
                     value: t.value,
                     child: Text(t.text, overflow: TextOverflow.ellipsis, maxLines: 1),
@@ -1116,7 +1107,9 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
               isExpanded: true,
               initialValue: _idCarrierForm,
               decoration: inputDec('Carrier'),
-              items: _carriersSL.list.map((e) => DropdownMenuItem(value: e.value, child: Text(e.text))).toList(),
+              items: (_catalogs?.carriers ?? const <OptionSL>[])
+                  .map((e) => DropdownMenuItem(value: e.value, child: Text(e.text)))
+                  .toList(),
               onChanged: (v) => setState(() => _idCarrierForm = v),
               validator: (v) => FormValidators.required(v, 'carrier'),
             ),

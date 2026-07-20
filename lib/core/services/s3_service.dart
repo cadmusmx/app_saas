@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:aws_client/s3_2006_03_01.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
+import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:gaso_tenant_app/core/config/env.dart';
 
 class S3Service {
@@ -10,6 +11,14 @@ class S3Service {
   final String _regionS3 = Env.s3Region;
   final String _accessKey = Env.s3AccessKey;
   final String _secretKey = Env.s3SecretKey;
+
+  /// Antepone el folder de entorno (`Qa/`|`Pr/`) a la llave RELATIVA que guarda
+  /// la app, para que el objeto viva donde `Config.s3Url` lo lee. Es global
+  /// (todo feature que suba hereda el prefijo) e idempotente.
+  String _resolveKey(String key) {
+    final folder = '${Config.s3Folder}/';
+    return key.startsWith(folder) ? key : '$folder$key';
+  }
 
   Future<String?> uploadFileToS3(File file, String key, [String? contentType]) async {
     // Verificar que el archivo existe
@@ -33,8 +42,11 @@ class S3Service {
     int attempts = 0;
     while (attempts < 5) {
       try {
-        await s3.putObject(bucket: _bucket, key: key, body: body, contentType: contentType);
-        return 'https://$_bucket.s3.$_regionS3.amazonaws.com/$key';
+        await s3.putObject(bucket: _bucket, key: _resolveKey(key), body: body, contentType: contentType);
+        // Devuelve la URL pública consistente con la lectura (Config.s3Url ya
+        // incluye el folder de entorno). La app guarda la llave RELATIVA (key);
+        // quien guarde la URL (p. ej. documentos) queda alineado con el display.
+        return '${Config.s3Url}$key';
       } catch (e) {
         attempts++;
         DebugLog.warning('Intento $attempts fallido: $e');
@@ -59,7 +71,7 @@ class S3Service {
         credentials: AwsClientCredentials(accessKey: _accessKey, secretKey: _secretKey),
       );
       final decodedKey = Uri.decodeComponent(key);
-      await s3.deleteObject(bucket: _bucket, key: decodedKey);
+      await s3.deleteObject(bucket: _bucket, key: _resolveKey(decodedKey));
       return true;
     } catch (e) {
       DebugLog.warning('$e');
@@ -75,7 +87,7 @@ class S3Service {
         credentials: AwsClientCredentials(accessKey: _accessKey, secretKey: _secretKey),
       );
       final decodedKey = Uri.decodeComponent(key);
-      GetObjectOutput objectOutput = await s3.getObject(bucket: _bucket, key: decodedKey);
+      GetObjectOutput objectOutput = await s3.getObject(bucket: _bucket, key: _resolveKey(decodedKey));
       return objectOutput.body;
     } catch (e) {
       DebugLog.warning('Error obteniendo archivo de S3: $e');

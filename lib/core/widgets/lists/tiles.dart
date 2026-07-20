@@ -165,19 +165,19 @@ class DrawerOptionAV extends AccessValidator {
 
 class DrawerListTile extends StatelessWidget {
   final DrawerOption opt;
-  final Color color;
-  const DrawerListTile(this.opt, this.color, {super.key});
+  const DrawerListTile(this.opt, {super.key});
 
   @override
   Widget build(BuildContext context) {
     final textTheme = TextTheme.of(context);
+    final colorScheme = ColorScheme.of(context);
     return ListTile(
       horizontalTitleGap: 8.0,
-      leading: Icon(opt.icon, color: opt.released ? color : Colors.grey),
+      leading: Icon(opt.icon, color: opt.released ? colorScheme.primary : colorScheme.outline),
       title: Text(
         opt.title.toUpperCase(),
         overflow: TextOverflow.ellipsis,
-        style: textTheme.bodyMedium?.copyWith(color: opt.released ? null : Colors.grey),
+        style: textTheme.bodyMedium?.copyWith(color: opt.released ? null : colorScheme.outline),
       ),
       onTap: (opt.released && opt.path != null) ? () => Navigator.pushNamed(context, opt.path!) : null,
     );

@@ -69,10 +69,7 @@ class _DrawerLateralState extends State<DrawerLateral> {
               ],
             ),
           ),
-          DrawerListTile(
-            DrawerOption(path: AppRoutes.profile, title: 'PERFIL', icon: Icons.person_sharp, released: false),
-            colorScheme.primary,
-          ),
+          DrawerListTile(DrawerOption(path: AppRoutes.profile, title: 'PERFIL', icon: Icons.person_sharp)),
           ...groups.map(
             (group) => group.menuList.length == 1
                 ? DrawerListTile(
@@ -81,17 +78,14 @@ class _DrawerLateralState extends State<DrawerLateral> {
                       title: group.menuList.first.label,
                       icon: group.menuList.first.icon,
                     ),
-                    colorScheme.primary,
                   )
                 : ExpansionTile(
                     shape: const Border(),
                     title: Text(kGroupLabels[group.groupName] ?? 'MÁS OPCIONES', style: textTheme.bodyMedium),
                     children: group.menuList
                         .map(
-                          (item) => DrawerListTile(
-                            DrawerOption(path: item.readRoute, title: item.label, icon: item.icon),
-                            colorScheme.primary,
-                          ),
+                          (item) =>
+                              DrawerListTile(DrawerOption(path: item.readRoute, title: item.label, icon: item.icon)),
                         )
                         .toList(),
                   ),
@@ -99,7 +93,6 @@ class _DrawerLateralState extends State<DrawerLateral> {
           Divider(),
           DrawerListTile(
             DrawerOption(path: AppRoutes.support, title: 'SOPORTE TÉCNICO', icon: Icons.support_agent_sharp),
-            colorScheme.primary,
           ),
           Consumer<ThemeService>(
             builder: (context, themeService, _) {

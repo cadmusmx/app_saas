@@ -15,7 +15,7 @@ class AppUser {
   final bool admin;
   final int? area;
   final int? cityBase;
-  final int? departament;
+  final int? department;
   final int? position;
   final int? region;
   final int? company;
@@ -27,7 +27,7 @@ class AppUser {
     required this.admin,
     this.area,
     this.cityBase,
-    this.departament,
+    this.department,
     this.position,
     this.region,
     this.company,
@@ -40,7 +40,7 @@ class AppUser {
     admin: _asBool(j['admin']),
     area: _asInt(j['area']),
     cityBase: _asInt(j['cityBase']),
-    departament: _asInt(j['departament']),
+    department: _asInt(j['department']),
     position: _asInt(j['position']),
     region: _asInt(j['region']),
     company: _asInt(j['company']),

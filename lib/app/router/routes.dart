@@ -9,6 +9,7 @@ import 'package:gaso_tenant_app/features/auth/presentation/load_screen.dart';
 import 'package:gaso_tenant_app/features/auth/presentation/login_screen.dart';
 import 'package:gaso_tenant_app/features/auth/presentation/mfa_screen.dart';
 import 'package:gaso_tenant_app/features/auth/presentation/mfa_setup_screen.dart';
+import 'package:gaso_tenant_app/features/profile/presentation/profile_screen.dart';
 import 'package:gaso_tenant_app/features/support/presentation/support_screen.dart';
 import 'package:gaso_tenant_app/features/home/presentation/home_screen.dart';
 import 'package:gaso_tenant_app/features/material_validation/domain/material_validation.dart';
@@ -93,7 +94,7 @@ final Map<String, WidgetBuilder> appRoutes = {
 
   // Protegidas: TenantGate unificado (verifica sesión; si no → /login)
   AppRoutes.home: (_) => const TenantGate(child: HomeScreen()),
-  AppRoutes.profile: (_) => const TenantGate(child: EnProceso()),
+  AppRoutes.profile: (_) => const TenantGate(child: ProfileScreen()),
   AppRoutes.support: (_) => const TenantGate(child: SupportScreen()),
 
   // vacation comparte ruta lista/alta: entrada por lectura, acciones por bit en el feature (S5)

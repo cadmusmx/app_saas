@@ -204,18 +204,6 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
   @override
   Widget buildListItem(BuildContext context, MaterialValidation vm, int index) {
     final colorScheme = Theme.of(context).colorScheme;
-    final iconsByProject = {
-      1: Icons.update, // 1. Modernización
-      2: Icons.storage, // 2. SDE
-      3: Icons.add_location, // 3. New Sites
-      4: Icons.move_up, // 4. Relocation
-      5: Icons.savings, // 5. Low Cost
-      6: Icons.eco, // 6. Green Field
-      7: Icons.inventory, // 7. NSB
-      8: Icons.shield, // 8. Resguardo
-      9: Icons.undo, // 9. Logística Inversa
-    };
-
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -228,7 +216,7 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
             Row(
               spacing: 8,
               children: [
-                Icon(iconsByProject[vm.idProyecto] ?? Icons.category, color: vm.cancelada ? colorScheme.error : null),
+                Icon(Icons.inventory_sharp, color: vm.cancelada ? colorScheme.error : null),
                 Flexible(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,6 +253,7 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
                 );
                 break;
               case 'images':
+                DebugLog.info('${Config.s3Url}${vm.transporteFoto}');
                 await showImagesDialog(
                   context,
                   images: [

@@ -10,13 +10,7 @@ import 'package:gaso_tenant_app/features/auth/data/auth_service.dart';
 ///
 /// Hosts soportados:
 ///  - `gasosaas://tenant/{slug}` → LoginScreen con la empresa pre-llenada.
-///  - `gasosaas://mv/{folio}` o `gasosaas://mv/{slug}/{folio}` → detalle de
-///    validación de material (QR del registro).
-///
-/// El folio es único **por tenant**, no global: dos empresas pueden tener el
-/// mismo folio. Por eso se acepta la forma con `{slug}`, que permite detectar
-/// que el QR es de otra empresa en vez de abrir un registro homónimo del tenant
-/// activo. La forma corta se resuelve contra el tenant activo.
+///  - `gasosaas://mv/{folio}` → detalle de validación de material (QR del registro).
 class DeepLinkService {
   final GlobalKey<NavigatorState> navigatorKey;
   final _appLinks = AppLinks();
@@ -25,7 +19,7 @@ class DeepLinkService {
 
   /// Deep link recibido durante el arranque, pendiente de abrir.
   /// Ver [_handleMaterialValidation] y [openPending].
-  static ({String? slug, String folio})? _pending;
+  static ({String folio})? _pending;
 
   DeepLinkService(this.navigatorKey) {
     _instance = this;
@@ -50,7 +44,7 @@ class DeepLinkService {
     final pending = _pending;
     _pending = null;
     if (pending == null) return;
-    _instance?._openMaterialValidation(pending.slug, pending.folio);
+    _instance?._openMaterialValidation(pending.folio);
   }
 
   void _handle(Uri uri) {
@@ -85,46 +79,31 @@ class DeepLinkService {
 
   // validación de material
 
-  /// `gasosaas://mv/{folio}` · `gasosaas://mv/{slug}/{folio}`
+  /// `gasosaas://mv/{folio}`
   void _handleMaterialValidation(Uri uri) {
     final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
     if (segments.isEmpty) return;
 
-    // Con 2 segmentos el primero es el slug del tenant dueño del registro.
-    final String? slug = segments.length >= 2 ? segments.first : null;
-    final String folio = segments.length >= 2 ? segments[1] : segments.first;
+    final String folio = segments.first;
     if (folio.isEmpty) return;
 
-    // Cold-start: la app sigue arrancando (AuthService aún no leyó el token y
-    // LoadScreen no ha decidido destino). Decidir aquí mandaría a login por un
-    // falso negativo, y cualquier push sería sustituido por LoadScreen.
+    // Cold-start: la app sigue arrancando (AuthService aún no leyó el token y LoadScreen no ha decidido destino).
+    // Decidir aquí mandaría a login por un falso negativo, y cualquier push sería sustituido por LoadScreen.
     // Se guarda y LoadScreen lo abre vía openPending().
     if (!AuthService.instance.loadedAuthState.value) {
-      _pending = (slug: slug, folio: folio);
+      _pending = (folio: folio);
       return;
     }
 
-    _openMaterialValidation(slug, folio);
+    _openMaterialValidation(folio);
   }
 
-  void _openMaterialValidation(String? slug, String folio) {
-    final currentTenant = TenantContext.instance.current;
+  void _openMaterialValidation(String folio) {
     final isAuthenticated = AuthService.instance.isAuthenticated && AuthService.instance.isTokenValid;
 
-    // Sin sesión: a login. Si el QR trae slug, lo pre-llena.
+    // Sin sesión: a login
     if (!isAuthenticated) {
-      if (slug != null) {
-        _goToLogin(slug);
-      } else {
-        navigatorKey.currentState?.pushReplacementNamed(AppRoutes.login);
-      }
-      return;
-    }
-
-    // QR de otra empresa: no lo abras contra el tenant activo (el folio podría
-    // existir ahí y mostrar un registro distinto).
-    if (slug != null && currentTenant != null && currentTenant.slug != slug) {
-      _showSwitchDialog(slug, currentTenant.slug);
+      navigatorKey.currentState?.pushReplacementNamed(AppRoutes.login);
       return;
     }
 

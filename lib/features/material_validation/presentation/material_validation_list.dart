@@ -37,7 +37,7 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
   bool _es = true;
 
   @override
-  String get screenTitle => 'Validación de ${_es ? 'entradas' : 'salidas'}';
+  String get screenTitle => _es ? 'Entradas' : 'Salidas';
 
   @override
   String get emptyMessage => 'No hay registros.';
@@ -72,8 +72,8 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
 
   @override
   Future<List<MaterialValidation>> fetchData() async {
-    // Listado general del tenant (Perm.R): NO se filtra por idUsuario; se ven
-    // todos los registros. La edición sigue gateada al dueño en cada item.
+    // Listado general del tenant (Perm.R): NO se filtra por idUsuario; se ven todos los registros.
+    // La edición sigue gateada al dueño en cada item.
     // Los filtros "Tipo"/"Condición" de la UI son en realidad proyecto/tipoMaterial.
     final filters = <String, dynamic>{
       'es': _es,
@@ -284,8 +284,8 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
                 await showImagesDialog(
                   context,
                   images: [VisualTitle<String>('QR', '${Config.s3Url}${vm.qr}')],
+                  padding: 16,
                   isQR: true,
-                  padding: 32,
                 );
                 break;
               case 'edit':

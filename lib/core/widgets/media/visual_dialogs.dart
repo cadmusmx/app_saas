@@ -8,8 +8,12 @@ import 'package:gaso_tenant_app/core/helpers/formatters_helper.dart';
 
 // Imágenes
 
-Future<void> showImagesDialog(BuildContext context,
-    {required List<VisualTitle<String>> images, bool isQR = false, double? padding}) {
+Future<void> showImagesDialog(
+  BuildContext context, {
+  required List<VisualTitle<String>> images,
+  bool isQR = false,
+  double? padding,
+}) {
   Container getImage(String src) {
     return Container(
       color: Colors.white,
@@ -53,9 +57,12 @@ Future<void> showSignaturesDialog(BuildContext context, {required List<VisualTit
     items: signatures,
     visualBuilder: (item) => SizedBox(
       width: double.infinity,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Image.memory(item.source, fit: BoxFit.contain),
+      child: Container(
+        color: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Image.memory(item.source, fit: BoxFit.contain),
+        ),
       ),
     ),
   );
@@ -102,10 +109,12 @@ Future<void> showDocumentsDialog(
   );
 }
 
-Future<void> _showGenericDialog<T>(BuildContext context,
-    {required List<VisualTitle<T>> items,
-    required Widget Function(VisualTitle<T> item) visualBuilder,
-    int startFrom = 0}) async {
+Future<void> _showGenericDialog<T>(
+  BuildContext context, {
+  required List<VisualTitle<T>> items,
+  required Widget Function(VisualTitle<T> item) visualBuilder,
+  int startFrom = 0,
+}) async {
   if (items.isEmpty) return Future.value();
   await showDialog(
     context: context,
@@ -122,7 +131,7 @@ Future<void> _showGenericDialog<T>(BuildContext context,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(child: Text(item.title, overflow: TextOverflow.ellipsis)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
               ],
             ),
             content: visualBuilder(item),
@@ -152,7 +161,9 @@ Future<void> _showGenericDialog<T>(BuildContext context,
 /// Crea una lista de VisualTitle&lt;String&gt; a partir de un Map
 List<VisualTitle<String>> imagesFromMap(Map<String, dynamic>? photos) {
   if (photos == null) return [];
-  return photos.entries.map((photo) => VisualTitle<String>(snakeToTitle(photo.key), '${Config.s3Url}${photo.value}')).toList();
+  return photos.entries
+      .map((photo) => VisualTitle<String>(snakeToTitle(photo.key), '${Config.s3Url}${photo.value}'))
+      .toList();
 }
 
 /// Crea un Image dentro de un padding a partir de bytes

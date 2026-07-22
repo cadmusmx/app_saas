@@ -3,9 +3,6 @@ part 'env.g.dart';
 
 @Envied(path: '.env', obfuscate: true)
 abstract class Env {
-  @EnviedField(varName: 'API_URL', defaultValue: 'http://localhost:3000/api')
-  static final String apiUrl = _Env.apiUrl;
-
   @EnviedField(varName: 'S3_BUCKET', defaultValue: '')
   static final String s3Bucket = _Env.s3Bucket;
 

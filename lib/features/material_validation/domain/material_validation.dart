@@ -96,8 +96,7 @@ class MaterialValidation {
   final Map<String, dynamic> tarimas;
   final bool cancelada;
 
-  /// Id del vínculo o `null`. Permite saber si el folio ya está vinculado sin pegarle a `GET /linked`
-  /// (el server ya lo trae en `/search` y `/{folio}`).
+  /// Id del vínculo o `null`. Permite saber si el folio ya está vinculado sin pegarle a `GET /linked` (el server ya lo trae en `/search` y `/{folio}`).
   final int? vinculado;
 
   MaterialValidation({
@@ -193,8 +192,6 @@ class MaterialValidation {
   }
 }
 
-// -- Coerciones tolerantes (el BFF/SQL pueden serializar de varias formas) --
-
 int? _asInt(dynamic v) {
   if (v is int) return v;
   if (v is num) return v.toInt();
@@ -216,32 +213,32 @@ bool _asBool(dynamic v) {
 String _str(dynamic v) => v?.toString() ?? '';
 String? _strN(dynamic v) => v?.toString();
 
-/// `PiezasMotivo`/`PiezasEstadoF`/`MaterialDocumentos` llegan como **string JSON**
-/// (`FOR JSON PATH`). Tolerante por si el BFF alguna vez los manda ya parseados.
+/// `PiezasMotivo`/`PiezasEstadoF`/`MaterialDocumentos` llegan como **string JSON** (`FOR JSON PATH`).
+/// Tolerante por si el BFF alguna vez los manda ya parseados.
 List<dynamic> _decodeList(dynamic v) {
-  if (v == null) return const [];
-  if (v is List) return v;
+  if (v == null) return <dynamic>[];
+  if (v is List) return List<dynamic>.from(v);
   if (v is String) {
     try {
       final d = jsonDecode(v.isEmpty ? '[]' : v);
-      return d is List ? d : const [];
+      return d is List ? List<dynamic>.from(d) : <dynamic>[];
     } catch (_) {
-      return const [];
+      return <dynamic>[];
     }
   }
-  return const [];
+  return <dynamic>[];
 }
 
 Map<String, dynamic> _decodeMap(dynamic v) {
-  if (v == null) return const {};
-  if (v is Map) return v.cast<String, dynamic>();
+  if (v == null) return <String, dynamic>{};
+  if (v is Map) return Map<String, dynamic>.from(v);
   if (v is String) {
     try {
       final d = jsonDecode(v.isEmpty ? '{}' : v);
-      return d is Map ? d.cast<String, dynamic>() : const {};
+      return d is Map ? Map<String, dynamic>.from(d) : <String, dynamic>{};
     } catch (_) {
-      return const {};
+      return <String, dynamic>{};
     }
   }
-  return const {};
+  return <String, dynamic>{};
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:gaso_tenant_app/app/router/routes.dart';
 import 'package:gaso_tenant_app/core/auth/auth_context.dart';
+import 'package:gaso_tenant_app/core/services/deep_link_service.dart';
 import 'package:gaso_tenant_app/core/services/messenger_service.dart';
 import 'package:gaso_tenant_app/core/tenant/tenant_context.dart';
 import 'package:gaso_tenant_app/core/tenant/tenant_storage.dart';
@@ -71,6 +72,9 @@ class _LoadScreenState extends State<LoadScreen> {
     }
 
     Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+    // Deep link llegado durante el arranque: se abre ENCIMA de /home 
+    // (así "atrás" regresa al inicio en vez de cerrar la app).
+    DeepLinkService.openPending();
   }
 
   Future<void> _retry() async {
@@ -79,6 +83,7 @@ class _LoadScreenState extends State<LoadScreen> {
     if (!mounted) return;
     if (ok) {
       Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+      DeepLinkService.openPending();
     } else {
       setState(() => _retrying = false);
       MessengerService.info('Sigues sin conexión. Intenta de nuevo.');

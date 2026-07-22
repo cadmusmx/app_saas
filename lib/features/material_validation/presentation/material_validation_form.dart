@@ -95,6 +95,12 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
   bool _isSubmitting = false;
   bool _isEdition = false;
   MaterialValidation? _material;
+
+  /// Deep link del registro. Debe coincidir con el esquema declarado en
+  /// AndroidManifest / Info.plist (`gasosaas`); `appgaso://` era el de la app
+  /// legacy y NO abre esta app.
+  String _deepLink(String folio) => 'gasosaas://mv/$folio';
+
   bool _isBuilding = true;
   bool _sessionReady = false;
 
@@ -344,7 +350,13 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
           if (result.isNotEmpty) {
             // Hubo cambio de E/S, mostrar nuevo QR
             _preferences.vmES = _es;
-            _qrService.showQRDialog(context, result, () => Navigator.pushReplacementNamed(context, AppRoutes.home));
+            // El QR debe codificar el deep link; el folio va como etiqueta.
+            _qrService.showQRDialog(
+              context,
+              _deepLink(result),
+              () => Navigator.pushReplacementNamed(context, AppRoutes.home),
+              label: result,
+            );
           } else {
             Navigator.pushReplacementNamed(context, AppRoutes.home);
           }
@@ -380,7 +392,12 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
         if (!mounted) return;
         if (success) {
           _preferences.vmES = _es;
-          _qrService.showQRDialog(context, folio, () => Navigator.pushReplacementNamed(context, AppRoutes.home));
+          _qrService.showQRDialog(
+            context,
+            _deepLink(folio),
+            () => Navigator.pushReplacementNamed(context, AppRoutes.home),
+            label: folio,
+          );
         }
       }
     } catch (e) {
@@ -409,7 +426,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
     }
 
     // subir el QR del folio a S3
-    final urlQR = 'appgaso://mv/$folio';
+    final urlQR = _deepLink(folio);
     final qrBytes = await _qrService.generateQrBytes(urlQR);
     final String qrPath = '$_photosFolder${_sessionUser.user.id}/$folio.png';
     final url = await _s3Service.uploadU8LToS3(qrBytes, qrPath, 'image/png');
@@ -470,7 +487,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
       final newFolio = getFolio(_sessionUser.user.id, 'VM${_es ? 'E' : 'S'}-$_proyectoForm$_tipoMaterialForm');
 
       // Generar y subir nuevo QR
-      final urlQR = 'appgaso://mv/$newFolio';
+      final urlQR = _deepLink(newFolio);
       final qrBytes = await _qrService.generateQrBytes(urlQR);
       final newQrPath = '$_photosFolder${_sessionUser.user.id}/$newFolio.png';
       final qrUrl = await _s3Service.uploadU8LToS3(qrBytes, newQrPath, 'image/png');

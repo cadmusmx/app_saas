@@ -69,7 +69,7 @@ class SectionTitle extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: textTheme.titleLarge),
-          if (subtitle != null) Text(subtitle!, style: textTheme.titleMedium?.copyWith(color: colorScheme.outline))
+          if (subtitle != null) Text(subtitle!, style: textTheme.bodyLarge?.copyWith(color: colorScheme.outline))
         ],
       ),
     );

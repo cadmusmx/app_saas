@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:gaso_tenant_app/core/auth/auth_context.dart';
+import 'package:gaso_tenant_app/core/auth/session_user.dart';
 import 'package:http/http.dart';
 import 'package:http/io_client.dart';
 import 'package:gaso_tenant_app/core/auth/auth_token.dart';
@@ -54,6 +56,13 @@ abstract class HttpService {
     return _execute(method, endpoint, headers: _baseHeaders, body: body, authenticated: false);
   }
 
+  String getApiUrl() {
+    final SessionUser? session = AuthContext.instance.current;
+    if (session == null) return Config.apiUrl;
+    final String slug = session.tenant.slug;
+    return 'https://$slug:8484/';
+  }
+
   // Implementación interna
 
   Future<Response> _execute(
@@ -64,7 +73,8 @@ abstract class HttpService {
     Map<String, dynamic>? body,
     bool useIOClient = false,
   }) async {
-    final uri = Uri.parse('${Config.apiUrl}$endpoint');
+    final apiUrl = Config.appEnv == AppEnv.prod ? getApiUrl() : Config.apiUrl;
+    final uri = Uri.parse('$apiUrl$endpoint');
     final encodedBody = body != null ? jsonEncode(body) : null;
     final client = useIOClient ? buildClient() : _client;
 

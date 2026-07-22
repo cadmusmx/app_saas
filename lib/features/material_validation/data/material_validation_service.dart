@@ -41,21 +41,15 @@ class MaterialValidationService extends HttpService {
   }) async {
     final safeLimit = limit.clamp(1, 100);
     try {
-      final res = await send(
-        'POST',
-        '$_base/search?pagina=$page&limite=$safeLimit&orden=$sort',
-        body: filters,
-      );
+      final res = await send('POST', '$_base/search?pagina=$page&limite=$safeLimit&orden=$sort', body: filters);
       final body = jsonDecode(res.body);
+
       final rows = body is Map ? body['rows'] : body; // fallback defensivo si llegara desnudo
       if (rows is! List) {
         DebugLog.warning('search: formato inesperado -> ${res.body}');
         return ServiceResponse.error('Formato inesperado al obtener los registros.', statusCode: res.statusCode);
       }
-      final data = rows
-          .whereType<Map>()
-          .map((e) => MaterialValidation.fromJson(e.cast<String, dynamic>()))
-          .toList();
+      final data = rows.whereType<Map>().map((e) => MaterialValidation.fromJson(e.cast<String, dynamic>())).toList();
       return ServiceResponse.ok(data, statusCode: res.statusCode);
     } on ApiException catch (e) {
       return ServiceResponse.error(
@@ -81,10 +75,7 @@ class MaterialValidationService extends HttpService {
       if (body is! Map) {
         return ServiceResponse.error('Formato inesperado al obtener el registro.', statusCode: res.statusCode);
       }
-      return ServiceResponse.ok(
-        MaterialValidation.fromJson(body.cast<String, dynamic>()),
-        statusCode: res.statusCode,
-      );
+      return ServiceResponse.ok(MaterialValidation.fromJson(body.cast<String, dynamic>()), statusCode: res.statusCode);
     } on ApiException catch (e) {
       return ServiceResponse.error(
         e.message.isNotEmpty ? e.message : 'No se pudo cargar el registro.',

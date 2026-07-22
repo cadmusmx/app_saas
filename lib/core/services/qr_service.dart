@@ -51,7 +51,15 @@ class QrService {
   }
 
   /// Permite mostrar un dialog con QR
-  Future<void> showQRDialog(BuildContext context, String data, FutureOr<void> Function() onClose) async {
+  /// [data] es lo que se codifica en el QR (p. ej. el deep link) y [label] lo
+  /// que se muestra debajo (p. ej. el folio). Si no se pasa [label], se
+  /// muestra [data].
+  Future<void> showQRDialog(
+    BuildContext context,
+    String data,
+    FutureOr<void> Function() onClose, {
+    String? label,
+  }) async {
     await showDialog(
       context: context,
       barrierDismissible: false,
@@ -64,7 +72,7 @@ class QrService {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(child: const Text('QR generado')),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
                 ],
               ),
               content: Column(
@@ -73,7 +81,10 @@ class QrService {
                 spacing: 16,
                 children: [
                   generateQrWidget(data: data, size: 250),
-                  Text(data, style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'SF-Pro-Rounded-Regular'))
+                  Text(
+                    label ?? data,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'SF-Pro-Rounded-Regular'),
+                  ),
                 ],
               ),
             );

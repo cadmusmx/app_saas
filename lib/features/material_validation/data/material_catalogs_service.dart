@@ -37,7 +37,7 @@ class MaterialCatalogsService extends HttpService {
   }
 }
 
-/// Caché **in-memory, tenant-scoped** de los catálogos. 
+/// Caché **in-memory, tenant-scoped** de los catálogos.
 /// Objetivo: acortar el tiempo de carga del formulario evitando re-pedir los catálogos en cada
 /// apertura dentro de la misma sesión.
 ///

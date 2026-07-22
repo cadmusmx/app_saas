@@ -71,7 +71,7 @@ class Branding {
   final String? logoUrl;
   final String primaryColor;
 
-  static const String defaultPrimaryColor = '#7367F0';
+  static const String defaultPrimaryColor = '#000000';
 
   const Branding({this.displayName, this.logoUrl, this.primaryColor = defaultPrimaryColor});
 

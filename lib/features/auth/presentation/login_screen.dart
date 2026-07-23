@@ -75,8 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final username = _usernameController.text.trim();
     final password = _passwordController.text;
     if (slug.isEmpty || username.isEmpty || password.isEmpty) {
-      MessengerService.info('Completa todos los campos.');
-      return;
+      return MessengerService.info('Completa todos los campos.');
     }
     final authService = Provider.of<AuthService>(context, listen: false);
     final navigator = Navigator.of(context);

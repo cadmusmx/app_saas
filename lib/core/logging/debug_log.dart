@@ -11,7 +11,7 @@ class DebugLog {
         prefs.setStringList('debug_logs', logs);
       });
     } catch (_) {}
-    debugPrint('\x1B[31m[X] $text\x1B[0m');
+    debugPrint('\x1B[91m[X] $text\x1B[0m');
   }
 
   static void warning(String text) {
@@ -23,11 +23,11 @@ class DebugLog {
         prefs.setStringList('debug_logs', logs);
       });
     } catch (_) {}
-    debugPrint('\x1B[33m[!] $text\x1B[0m');
+    debugPrint('\x1B[93m[!] $text\x1B[0m');
   }
 
-  static void success(String text) => text.isNotEmpty ? debugPrint('\x1B[32m[✓] $text\x1B[0m') : null;
-  static void info(String text) => text.isNotEmpty ? debugPrint('\x1B[36m$text\x1B[0m') : null;
+  static void success(String text) => text.isNotEmpty ? debugPrint('\x1B[92m[✓] $text\x1B[0m') : null;
+  static void info(String text) => text.isNotEmpty ? debugPrint('\x1B[96m$text\x1B[0m') : null;
   static void alert(String text) => text.isNotEmpty ? debugPrint('\x1B[5m$text\x1B[0m') : null;
   static void tag(String text) => text.isNotEmpty ? debugPrint('\x1B[7m$text\x1B[0m') : null;
 

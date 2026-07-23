@@ -40,7 +40,6 @@ class DeepLinkService with WidgetsBindingObserver {
     }, onError: (Object e) => DebugLog.error('[deeplink] stream error: $e'));
 
     final initialUri = await _appLinks.getInitialLink();
-    DebugLog.info('[deeplink] initial: ${initialUri ?? "(ninguno)"}');
     if (initialUri != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _handle(initialUri));
     }

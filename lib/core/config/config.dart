@@ -6,8 +6,8 @@ class Config {
   /// Entorno lógico de la app: dev | qa | prod.
   static const AppEnv appEnv = AppEnv.qa;
 
-  /// URL base de la API (leída desde .env via Env.apiUrl).
-  static String apiUrl = 'http://192.168.0.14:3000/api/'; // La API cambia en función del tenant [PENDIENTE: revisar cuando cada tenant tenga su url en producción]
+  /// URL base de la API, En producción se genera en base al slug-tenant del usuario en sesión (PENDIENTE)
+  static String apiUrl = 'http://192.168.0.14:3000/api/';
 
   /// Carpeta S3 por entorno (`Qa`/`Pr`). Se antepone a TODA llave de objeto:
   /// la escritura la resuelve `S3Service`; la lectura la antepone `s3Url`.

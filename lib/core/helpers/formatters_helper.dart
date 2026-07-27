@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
 import 'package:gaso_tenant_app/core/helpers/regexp_helper.dart';
 
@@ -53,6 +54,18 @@ DateTime? parseDateIso(dynamic value) {
 DateTime parseDate(String date) {
   if (date.isEmpty) return DateTime.now();
   return DateTime.tryParse(date) ?? DateTime.now();
+}
+
+/// Convierte una hora de API/SQL ("HH:mm" o "HH:mm:ss") a [TimeOfDay].
+/// Retorna null si el valor es nulo, vacío o no es una hora válida.
+TimeOfDay? parseApiTime(dynamic value) {
+  if (value == null || (value is String && value.isEmpty)) return null;
+  final parts = (value as String).split(':');
+  if (parts.length < 2) return null;
+  final h = int.tryParse(parts[0]);
+  final m = int.tryParse(parts[1]);
+  if (h == null || m == null || h < 0 || h > 23 || m < 0 || m > 59) return null;
+  return TimeOfDay(hour: h, minute: m);
 }
 
 /// cambia una cadena de texto de formato snakeCase a Titulo

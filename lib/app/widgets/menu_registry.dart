@@ -66,14 +66,6 @@ const List<MenuItem> kMobileMenu = [
   ),
   MenuItem(
     'vehicles',
-    'vehicle_expense_control',
-    'GASTOS VEHICULARES',
-    AppRoutes.vehicleExpensesList,
-    AppRoutes.vehicleExpenses,
-    icon: Icons.payments,
-  ),
-  MenuItem(
-    'vehicles',
     'vehicle_liability',
     'RESPONSIVAS VEHICULARES',
     AppRoutes.vehicleLiabilityList,
@@ -90,12 +82,12 @@ const List<MenuItem> kMobileMenu = [
     icon: Icons.speed_sharp,
   ),
   MenuItem(
-    'human_capital',
-    'vacation',
-    'VACACIONES Y PERMISOS',
-    AppRoutes.vacationLeave,
-    AppRoutes.vacationLeave,
-    icon: Icons.beach_access_sharp,
+    'vehicles',
+    'vehicle_expense_control',
+    'GASTOS VEHICULARES',
+    AppRoutes.vehicleExpensesList,
+    AppRoutes.vehicleExpenses,
+    icon: Icons.payments,
   ),
   MenuItem(
     'operating_expenses',
@@ -123,6 +115,14 @@ const List<MenuItem> kMobileMenu = [
     icon: Icons.inventory_sharp,
     description: 'ENTRADA Y SALIDA POR PROYECTO',
   ),
+  MenuItem(
+    'human_capital',
+    'vacation',
+    'VACACIONES Y PERMISOS',
+    AppRoutes.vacationLeave,
+    AppRoutes.vacationLeave,
+    icon: Icons.beach_access_sharp,
+  ),
 ];
 
 // Filtros
@@ -130,7 +130,7 @@ const List<MenuItem> kMobileMenu = [
 //   1. plan:     planMenuGroups.contains(group)   ─┐
 //   2. settings: menuGroups[group] == true         ├─ AuthContext.isGroupEnabled
 //   3. permiso:  Perm.hasRead(views[code].mask)    ── AuthContext.hasView
-//   4. app:      estar en kMobileMenu               ── implícito por iterar aquí
+//   4. app:      estar en kMobileMenu              ── implícito por iterar aquí
 // Además: el grupo `dashboard` se excluye siempre.
 
 bool _isVisible(AuthContext auth, MenuItem it) =>

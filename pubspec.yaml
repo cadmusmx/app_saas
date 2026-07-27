@@ -35,6 +35,7 @@ dependencies:
   signature: ^6.3.0
   aws_client: ^0.9.3
   path: ^1.9.1
+  open_filex: ^4.7.0
 
 dev_dependencies:
   flutter_test:

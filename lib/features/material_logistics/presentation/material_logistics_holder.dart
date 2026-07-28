@@ -16,7 +16,7 @@ String _fmtDate(DateTime d) =>
 
 int? _toInt(String? v) => (v == null || v.isEmpty) ? null : int.tryParse(v);
 
-const String _evidenceFolder = 'docsMatLog/';
+const String _evidenceFolder = 'material_logistics/';
 
 /// State holder del formulario de Logística de Material, con alcance de ruta.
 /// Ambas pantallas (Cabecera / Sitios) lo observan vía `provider`.

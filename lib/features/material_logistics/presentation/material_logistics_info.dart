@@ -2,7 +2,7 @@ import 'package:gaso_tenant_app/core/widgets/info/info_letter.dart';
 
 const materialLogisticsLetter = InfoLetter(
   title: 'Logística',
-  summary: 'Varios Sitios, XDOCK, Control de arribo - Envío de correos PDF',
+  summary: 'Varios Sitios, XDOCK, Control de arribo',
   sections: [
     InfoLetterSection.text('Propósito',
         'Registra la recepción o entrega de un arribo por XDOCK. Un mismo arribo puede repartirse en varios sitios, y cada sitio lleva su propio detalle de material, tiempos, faltantes, incidencias y evidencias.'),

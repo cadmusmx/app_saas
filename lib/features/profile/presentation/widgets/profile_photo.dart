@@ -30,7 +30,7 @@ class ProfilePhoto extends StatelessWidget {
       fit: BoxFit.cover,
       width: size,
       height: size,
-      errorBuilder: (_, __, ___) => Icon(Icons.person, size: 40, color: Colors.grey),
+      errorBuilder: (_, _, _) => Icon(Icons.person, size: 40, color: Colors.grey),
     );
   }
 

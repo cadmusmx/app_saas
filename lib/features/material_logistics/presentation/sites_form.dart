@@ -44,7 +44,7 @@ class SitesForm extends StatefulWidget {
 class _SitesFormState extends State<SitesForm> {
   final _formKey = GlobalKey<FormState>();
   final _controllers = ControllersManager();
-  late final LogisticsCatalogs? _catalogs;
+  LogisticsCatalogs? _catalogs;
   final ImageService _imageService = ImageService();
   final LocationService _locationService = LocationService();
   final PhotoPicker _photoPicker = PhotoPicker();

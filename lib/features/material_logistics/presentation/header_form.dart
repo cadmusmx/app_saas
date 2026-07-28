@@ -43,7 +43,7 @@ class HeaderForm extends StatefulWidget {
 class _HeaderFormState extends State<HeaderForm> {
   final _formKey = GlobalKey<FormState>();
   final _controllers = ControllersManager();
-  late final LogisticsCatalogs? _catalogs;
+  LogisticsCatalogs? _catalogs;
   final Preferences _preferences = Preferences();
   final DraftManager _draftManager = DraftManager('material_logistics_draft');
   late final MaterialLogisticsHolder _holder;

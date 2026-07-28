@@ -27,7 +27,7 @@ class MaterialLogisticsList extends StatefulWidget {
 
 class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, MaterialLogistics> {
   final MaterialLogisticsService _service = MaterialLogisticsService();
-  late final LogisticsCatalogs? _catalogs;
+  LogisticsCatalogs? _catalogs;
   final Preferences _preferences = Preferences();
   final ValueNotifier<String?> _xdock = ValueNotifier(null);
   final ValueNotifier<String?> _carrier = ValueNotifier(null);

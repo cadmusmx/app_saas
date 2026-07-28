@@ -484,6 +484,9 @@ class _SitesFormState extends State<SitesForm> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isBuilding) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     final identity = <Widget>[
       TextFormField(
         controller: _controllers.get('idSitio'),

@@ -50,7 +50,7 @@ class _AppBarHeaderState extends State<AppBarHeader> {
             ),
         ],
       ),
-      titleSpacing: 0.0,
+      titleSpacing: 8.0,
       actions: widget.actions,
     );
   }

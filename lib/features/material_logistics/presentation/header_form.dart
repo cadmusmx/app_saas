@@ -215,7 +215,7 @@ class _HeaderFormState extends State<HeaderForm> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_sessionReady) {
+    if (!_sessionReady || _isBuilding) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     final holder = context.watch<MaterialLogisticsHolder>();
@@ -337,55 +337,53 @@ class _HeaderFormState extends State<HeaderForm> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SafeArea(
-            child: _isBuilding
-                ? const Center(child: CircularProgressIndicator())
-                : Form(
-                    key: _formKey,
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.all(ResponsiveHelper.mainPadding(constraints)),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 16,
-                        children: [
-                          InfoLetterChip(materialLogisticsLetter),
-                          MasonryGridView.count(
-                            crossAxisCount: ResponsiveHelper.crossAxisCount(constraints),
-                            mainAxisSpacing: 8,
-                            crossAxisSpacing: 8,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: fields.length,
-                            itemBuilder: (context, index) => fields[index],
-                          ),
-                          const HeaderDocumentsSection(),
-                          SectionTitle('Control de arribo'),
-                          MasonryGridView.count(
-                            crossAxisCount: ResponsiveHelper.crossAxisCount(constraints),
-                            mainAxisSpacing: 8,
-                            crossAxisSpacing: 8,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: fieldsArribo.length,
-                            itemBuilder: (context, index) => fieldsArribo[index],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisSize: MainAxisSize.max,
-                            children: [
-                              Expanded(
-                                child: FilledButton.tonalIcon(
-                                  label: Text(holder.isEdition ? 'GUARDAR' : 'CONTINUAR'),
-                                  onPressed: _continue,
-                                  iconAlignment: IconAlignment.end,
-                                  icon: Icon(holder.isEdition ? Icons.check : Icons.arrow_forward),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+            child: Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(ResponsiveHelper.mainPadding(constraints)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 16,
+                  children: [
+                    InfoLetterChip(materialLogisticsLetter),
+                    MasonryGridView.count(
+                      crossAxisCount: ResponsiveHelper.crossAxisCount(constraints),
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: fields.length,
+                      itemBuilder: (context, index) => fields[index],
                     ),
-                  ),
+                    const HeaderDocumentsSection(),
+                    SectionTitle('Control de arribo'),
+                    MasonryGridView.count(
+                      crossAxisCount: ResponsiveHelper.crossAxisCount(constraints),
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: fieldsArribo.length,
+                      itemBuilder: (context, index) => fieldsArribo[index],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        Expanded(
+                          child: FilledButton.tonalIcon(
+                            label: Text(holder.isEdition ? 'GUARDAR' : 'CONTINUAR'),
+                            onPressed: _continue,
+                            iconAlignment: IconAlignment.end,
+                            icon: Icon(holder.isEdition ? Icons.check : Icons.arrow_forward),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
           );
         },
       ),

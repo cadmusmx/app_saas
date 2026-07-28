@@ -192,8 +192,8 @@ class HeaderDocumentsSection extends StatelessWidget {
           children: [
             const Expanded(
               child: SectionTitle(
-                'Documentos generales',
-                subtitle: 'Opcional. Aplican a todo el arribo (imagen o PDF).',
+                'Evidencias generales',
+                subtitle: 'Opcional (imagen o PDF).',
               ),
             ),
             IconButton(

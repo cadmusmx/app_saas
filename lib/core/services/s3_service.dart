@@ -34,8 +34,6 @@ class S3Service {
   }
 
   Future<String?> _uploadToS3(Uint8List body, String key, String? contentType) async {
-    DebugLog.info(_accessKey);
-    DebugLog.info(_secretKey);
     final s3 = S3(
       region: _regionS3,
       credentials: AwsClientCredentials(accessKey: _accessKey, secretKey: _secretKey),

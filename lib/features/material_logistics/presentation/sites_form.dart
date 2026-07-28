@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:gaso_tenant_app/features/material_logistics/data/logistics_catalogs_service.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
@@ -22,7 +23,7 @@ import 'package:gaso_tenant_app/core/services/location_service.dart';
 import 'package:gaso_tenant_app/core/services/messenger_service.dart';
 import 'package:gaso_tenant_app/core/selection/option_sl.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
-import 'package:gaso_tenant_app/features/material_logistics/data/selection_lists.dart';
+import 'package:gaso_tenant_app/features/material_logistics/domain/logistics_catalogs.dart';
 import 'package:gaso_tenant_app/features/material_logistics/domain/sitio_draft.dart';
 import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_holder.dart';
 
@@ -43,9 +44,7 @@ class SitesForm extends StatefulWidget {
 class _SitesFormState extends State<SitesForm> {
   final _formKey = GlobalKey<FormState>();
   final _controllers = ControllersManager();
-  final MaterialTypesSL _materialTypesSL = MaterialTypesSL();
-  final EvidenceTypesSL _evidenceTypesSL = EvidenceTypesSL();
-  final IncidenceTypesSL _incidenceTypesSL = IncidenceTypesSL();
+  late final LogisticsCatalogs? _catalogs;
   final ImageService _imageService = ImageService();
   final LocationService _locationService = LocationService();
   final PhotoPicker _photoPicker = PhotoPicker();
@@ -71,17 +70,17 @@ class _SitesFormState extends State<SitesForm> {
 
   Future<void> _loadData() async {
     try {
-      if (_materialTypesSL.list.isEmpty || _evidenceTypesSL.list.isEmpty || _incidenceTypesSL.list.isEmpty) {
-        await Future.delayed(const Duration(seconds: 2));
-      }
+      _catalogs = await LogisticsCatalogsCache.instance.load();
       _controllers.setValue('idSitio', _draft.idSitio);
       _controllers.setValue('nombreSitio', _draft.nombreSitio);
       _controllers.setValue('descripcionMaterial', _draft.descripcionMaterial);
       _controllers.setValue('descripcionFaltantes', _draft.descripcionFaltantes ?? '');
       _controllers.setValue('descripcionIncidencias', _draft.descripcionIncidencias ?? '');
       // Reconciliar tipos restaurados (de un borrador) contra el catálogo vigente.
-      _draft.tipos.removeWhere((id) => !_materialTypesSL.list.any((o) => o.value == '$id'));
-      _draft.incidencias.removeWhere((id) => !_incidenceTypesSL.list.any((o) => o.value == '$id'));
+      final materialTypes = _catalogs?.materialTypes ?? const <OptionSL>[];
+      final incidenceTypes = _catalogs?.incidenceTypes ?? const <OptionSL>[];
+      _draft.tipos.removeWhere((id) => !materialTypes.any((o) => o.value == '$id'));
+      _draft.incidencias.removeWhere((id) => !incidenceTypes.any((o) => o.value == '$id'));
       // Marca de agua: fecha del arribo + GPS (no bloqueante si el GPS falla).
       final fecha = getFormattedDate(_holder.fecha!, 'dd/MM/yyyy');
       try {
@@ -129,7 +128,7 @@ class _SitesFormState extends State<SitesForm> {
           Wrap(
             spacing: 8,
             runSpacing: 4,
-            children: _materialTypesSL.list.map((e) {
+            children: (_catalogs?.materialTypes ?? const <OptionSL>[]).map((e) {
               final id = int.parse(e.value);
               return FilterChip(
                 label: Text(e.text),
@@ -173,7 +172,7 @@ class _SitesFormState extends State<SitesForm> {
                     isExpanded: true,
                     initialValue: idTipoForm,
                     decoration: inputDec('Tipo de evidencia'),
-                    items: _evidenceTypesSL.list
+                    items: (_catalogs?.evidenceTypes ?? const <OptionSL>[])
                         .map((e) => DropdownMenuItem(value: e.value, child: Text(e.text)))
                         .toList(),
                     onChanged: (v) => setDlgState(() => idTipoForm = v),
@@ -318,7 +317,7 @@ class _SitesFormState extends State<SitesForm> {
 
   Widget _evidenciaItem(int index) {
     final e = _draft.evidencias[index];
-    final tipo = _evidenceTypesSL.list.getByValue('${e.idTipoEvidencia}')?.text ?? '';
+    final tipo = (_catalogs?.evidenceTypes ?? const <OptionSL>[]).getByValue('${e.idTipoEvidencia}')?.text ?? '';
     final fileRef = e.localPath ?? e.archivo;
     final hasFile = fileRef.isNotEmpty;
     final isPdf = e.mimeType.contains('pdf') || fileRef.toLowerCase().contains('.pdf');
@@ -600,7 +599,7 @@ class _SitesFormState extends State<SitesForm> {
                           Wrap(
                             spacing: 8,
                             runSpacing: 4,
-                            children: _incidenceTypesSL.list.map((e) {
+                            children: (_catalogs?.incidenceTypes ?? const <OptionSL>[]).map((e) {
                               final id = int.parse(e.value);
                               return FilterChip(
                                 label: Text(e.text),

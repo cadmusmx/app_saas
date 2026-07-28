@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:gaso_tenant_app/app/router/routes.dart';
+import 'package:gaso_tenant_app/core/auth/auth_context.dart';
 import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
 import 'package:gaso_tenant_app/core/list/base_list_screen.dart';
@@ -12,9 +13,10 @@ import 'package:gaso_tenant_app/core/widgets/lists/labels.dart';
 import 'package:gaso_tenant_app/core/widgets/forms/dialogs.dart';
 import 'package:gaso_tenant_app/core/widgets/forms/form_fields.dart';
 import 'package:gaso_tenant_app/core/helpers/formatters_helper.dart';
-import 'package:gaso_tenant_app/features/material_logistics/domain/material_logistics.dart';
 import 'package:gaso_tenant_app/features/material_logistics/data/material_logistics_service.dart';
-import 'package:gaso_tenant_app/features/material_logistics/data/selection_lists.dart';
+import 'package:gaso_tenant_app/features/material_logistics/data/logistics_catalogs_service.dart';
+import 'package:gaso_tenant_app/features/material_logistics/domain/material_logistics.dart';
+import 'package:gaso_tenant_app/features/material_logistics/domain/logistics_catalogs.dart';
 
 class MaterialLogisticsList extends StatefulWidget {
   const MaterialLogisticsList({super.key});
@@ -25,8 +27,7 @@ class MaterialLogisticsList extends StatefulWidget {
 
 class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, MaterialLogistics> {
   final MaterialLogisticsService _service = MaterialLogisticsService();
-  final XdocksSL _xdocksSL = XdocksSL();
-  final CarriersSL _carriersSL = CarriersSL();
+  late final LogisticsCatalogs? _catalogs;
   final Preferences _preferences = Preferences();
   final ValueNotifier<String?> _xdock = ValueNotifier(null);
   final ValueNotifier<String?> _carrier = ValueNotifier(null);
@@ -51,8 +52,12 @@ class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, 
   @override
   Future<void> onInitSuccess() async {
     await _preferences.init();
+    try {
+      _catalogs = await LogisticsCatalogsCache.instance.load();
+    } catch (e) {
+      DebugLog.warning('No se pudieron cargar los catálogos de filtros: $e');
+    }
     if (mounted) {
-      // Si nunca ha elegido (lmRE == null), arranca en Recepciones sin persistir.
       setState(() => _re = _preferences.lmRE ?? true);
     }
   }
@@ -67,18 +72,9 @@ class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, 
 
   @override
   Future<List<MaterialLogistics>> fetchData() async {
-    final formData = <String, dynamic>{
-      're': _re,
-      'idXdock': _xdock.value,
-      'idCarrier': _carrier.value,
-    };
+    final formData = <String, dynamic>{'re': _re, 'idXdock': _xdock.value, 'idCarrier': _carrier.value};
     formData.removeWhere((key, value) => value == null);
-    final response = await _service.getRecords(
-      formData,
-      page: currentPage,
-      limit: limit,
-      sort: _sort.value,
-    );
+    final response = await _service.getRecords(formData, page: currentPage, limit: limit, sort: _sort.value);
     if (!response.success || response.data == null) MessengerService.error(response.message);
     return response.data!;
   }
@@ -117,13 +113,13 @@ class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, 
       children: [
         OptionSelector<String?>(
           title: 'XDOCK',
-          optionsMap: _xdocksSL.list.toTVMap(),
+          optionsMap: (_catalogs?.xdocks ?? const <OptionSL>[]).toTVMap(),
           valueNotifier: _xdock,
           clearValue: null,
         ),
         OptionSelector<String?>(
           title: 'Carrier',
-          optionsMap: _carriersSL.list.toTVMap(),
+          optionsMap: (_catalogs?.carriers ?? const <OptionSL>[]).toTVMap(),
           valueNotifier: _carrier,
           clearValue: null,
         ),
@@ -144,7 +140,7 @@ class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, 
     return showDetailsDialog(context, ml.re ? 'Recepción' : 'Entrega', [
       LabelValue('Folio', ml.folio),
       LabelValue('XDOCK', ml.xdock),
-      LabelValue('Carrier', ml.idCarrier != 4 ? ml.carrier : (ml.otroCarrier ?? '—')),
+      LabelValue('Carrier', ml.esOtro ? (ml.otroCarrier ?? '—') : ml.carrier),
       LabelValue('Unidad / placa', ml.unidadPlaca),
       LabelValue('Operador', ml.nombreOperador),
       const SectionTitle('Control de arribo'),
@@ -158,20 +154,27 @@ class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, 
     ]);
   }
 
-  /// Drill-down de sitios: tarjetas estilo SitesScreen; el tap abre el detalle del sitio.
+  /// El listado (`/search`) trae los sitios en RESUMEN (solo conteos); el
+  /// detalle completo se pide con `GET /{folio}`.
   Future<void> _showSites(MaterialLogistics ml) async {
+    final response = await _service.getByFolio(ml.folio);
+    if (!mounted) return;
+    if (!response.success || response.data == null) {
+      return MessengerService.error(response.message);
+    }
+    final full = response.data!;
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Sitios'),
         content: SizedBox(
           width: double.maxFinite,
-          child: ml.sitios.isEmpty
+          child: full.sitios.isEmpty
               ? const Text('Sin sitios.')
               : ListView(
                   shrinkWrap: true,
                   children: [
-                    for (final s in ml.sitios)
+                    for (final s in full.sitios)
                       ListTile(
                         dense: true,
                         title: Text(
@@ -179,7 +182,7 @@ class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, 
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         subtitle: Text(
-                          '${s.tiposMaterial.length} tipo(s) · ${s.evidencias.length} evidencia(s) · ${s.tarimas.length} tarima(s)',
+                          '${s.tiposMaterial.length} tipo(s) · ${s.countEvidencias} evidencia(s) · ${s.countTarimas} tarima(s)',
                         ),
                         trailing: const Icon(Icons.chevron_right, size: 18),
                         onTap: () => _showSiteDetail(s),
@@ -187,7 +190,7 @@ class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, 
                   ],
                 ),
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar'))],
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cerrar'))],
       ),
     );
   }
@@ -223,11 +226,7 @@ class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, 
   Widget _fileItem(Map item, String nameKey, String fileKey) {
     try {
       final String archivo = '${item[fileKey] ?? ''}';
-      return InfoRow(
-        item[nameKey],
-        onAction: () => _verDocumento(archivo),
-        actionIcon: Icons.file_open,
-      );
+      return InfoRow(item[nameKey], onAction: () => _verDocumento(archivo), actionIcon: Icons.file_open);
     } catch (e) {
       DebugLog.warning('_fileItem - $e');
       return LabelValue('Sin registro', 'error al obtener los datos');
@@ -313,7 +312,8 @@ class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, 
           itemBuilder: (context) => [
             const PopupMenuItem(value: 'details', child: Text('Detalles')),
             if (item.sitios.isNotEmpty) const PopupMenuItem(value: 'sites', child: Text('Sitios')),
-            const PopupMenuItem(value: 'edit', child: Text('Editar')),
+            if (item.isOwnedBy(AuthContext.instance.current?.user.id))
+              const PopupMenuItem(value: 'edit', child: Text('Editar')),
           ],
         ),
         onTap: () => _showDetails(item),

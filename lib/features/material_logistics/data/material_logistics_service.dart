@@ -1,130 +1,150 @@
 import 'dart:io';
 import 'dart:convert';
+ 
+import 'package:gaso_tenant_app/core/http/api_exception.dart';
 import 'package:gaso_tenant_app/core/http/http_service.dart';
 import 'package:gaso_tenant_app/core/http/service_response.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
-import 'package:gaso_tenant_app/core/selection/selection_list.dart';
 import 'package:gaso_tenant_app/features/material_logistics/domain/material_logistics.dart';
 
+/// Capa de datos de Logística de Material contra el BFF multi-tenant.
+///
+/// Base del contrato: `/api/warehouses/material-logistics`.
+/// `Config.apiUrl` ya incluye `/api`, así que `_base` va sin él, igual que `me_service`/`material_validation_service`.
+///
+/// `HttpService.send` ya inyecta `x-tenant-slug`, `x-origin-id: 3` y `Bearer`, y lanza `ApiException` en no-2xx (401 → logout).
+/// Aquí solo se traduce el resultado a `ServiceResponse` con el patrón de `me_service` (`on ApiException` / `on SocketException`);
+/// no se arman headers a mano ni se revisa `statusCode` manualmente (a `send` solo se llega en 2xx).
+///
+/// Identidad del actor (`IdUsuario`/`TenantID`) sale del token: **no** se envía `idUsuario` en crear/editar;
+/// el folio identifica el registro en la URL del update (`PUT /{folio}`).
+/// El RBAC lo revalida el server y ya está gateado por `RbacGate`; no se duplica.
 class MaterialLogisticsService extends HttpService {
-  /// Listado con filtros y paginación. Cada registro trae su `Sitios` anidado.
+  static const String _base = 'warehouses/material-logistics';
+
+  /// POST `/search` — listado filtrado + paginado (bit R). Paginado por query, filtros por body.
+  /// Respuesta `{ rows, total, pagina, limite }`; se devuelven solo las `rows` (base_list_screen infiere `hasMore` por el tamaño de página).
+  ///
+  /// `filters` es agnóstico: el caller decide las claves del contrato
+  /// (`re`, `fechaInicio`, `fechaFin`, `idXdock`, `idCarrier`, e `idUsuario` solo como filtro opcional "mis registros"). `re` tri-estado: omitido = ambos.
   Future<ServiceResponse<List<MaterialLogistics>>> getRecords(
-    Map<String, dynamic> formData, {
+    Map<String, dynamic> filters, {
     int page = 1,
     int limit = 10,
     String sort = 'DESC',
   }) async {
-    String? message;
-    List<MaterialLogistics> data = [];
+    final safeLimit = limit.clamp(1, 100);
     try {
-      final response = await send(
-        'POST',
-        'logistica/getRecepcionesEntregas?pagina=$page&limite=$limit&orden=$sort',
-        body: formData,
+      final res = await send('POST', '$_base/search?pagina=$page&limite=$safeLimit&orden=$sort', body: filters);
+      final body = jsonDecode(res.body);
+
+      final rows = body is Map ? body['rows'] : body; // fallback defensivo
+      if (rows is! List) {
+        DebugLog.warning('search: formato inesperado -> ${res.body}');
+        return ServiceResponse.error('Formato inesperado al obtener los registros.', statusCode: res.statusCode);
+      }
+      final data = rows.whereType<Map>().map((e) => MaterialLogistics.fromJson(e.cast<String, dynamic>())).toList();
+      return ServiceResponse.ok(data, statusCode: res.statusCode);
+    } on ApiException catch (e) {
+      return ServiceResponse.error(
+        e.message.isNotEmpty ? e.message : 'No se pudieron cargar los registros.',
+        statusCode: e.statusCode,
       );
-      final body = jsonDecode(response.body);
-      if (body is List<dynamic>) {
-        data = body.map((s) => MaterialLogistics.fromJson(s)).toList();
-      } else {
-        DebugLog.warning(response.body);
-        message = 'Formato inesperado al obtener los registros';
-      }
-    } on HttpException catch (e) {
-      message = e.message;
+    } on SocketException {
+      return ServiceResponse.error('Sin conexión con el servidor.');
+    } on FormatException {
+      return ServiceResponse.error('No se pudo interpretar la respuesta del servidor.');
     } catch (e) {
-      DebugLog.error('Error cargando los registros: $e');
-      message = 'Error cargando los registros';
+      DebugLog.error('getRecords $e');
+      return ServiceResponse.error('Error inesperado al cargar los registros.');
     }
-    return ServiceResponse(message == null, message: message ?? 'OK', data: data);
   }
 
-  /// Detalle por folio (cabecera + sitios → tipos/incidencias/evidencias).
+  /// GET `/{folio}` — detalle completo (bit R).
+  /// `folio` URL-encoded. 404 si no existe en el tenant.
+  /// La respuesta es la cabecera completa + `documentos` + `sitios` completo (no un envelope).
   Future<ServiceResponse<MaterialLogistics?>> getByFolio(String folio) async {
-    String? message;
-    MaterialLogistics? data;
     try {
-      final response = await send('POST', 'logistica/getRecepcionEntregaByFolio', body: {'folio': folio});
-      final body = jsonDecode(response.body);
-      if (body is Map<String, dynamic>) {
-        data = MaterialLogistics.fromJson(body);
-      } else {
-        DebugLog.warning(response.body);
-        message = 'Formato inesperado al obtener el registro';
+      final res = await send('GET', '$_base/${Uri.encodeComponent(folio)}');
+      final body = jsonDecode(res.body);
+      if (body is! Map) {
+        return ServiceResponse.error('Formato inesperado al obtener el registro.', statusCode: res.statusCode);
       }
-    } on HttpException catch (e) {
-      message = e.message;
+      return ServiceResponse.ok(MaterialLogistics.fromJson(body.cast<String, dynamic>()), statusCode: res.statusCode);
+    } on ApiException catch (e) {
+      return ServiceResponse.error(
+        e.message.isNotEmpty ? e.message : 'No se pudo cargar el registro.',
+        statusCode: e.statusCode,
+      );
+    } on SocketException {
+      return ServiceResponse.error('Sin conexión con el servidor.');
+    } on FormatException {
+      return ServiceResponse.error('No se pudo interpretar la respuesta del servidor.');
     } catch (e) {
-      DebugLog.error('Error cargando el registro: $e');
-      message = 'Error cargando el registro';
+      DebugLog.error('getByFolio $e');
+      return ServiceResponse.error('Error inesperado al cargar el registro.');
     }
-    return ServiceResponse(message == null, message: message ?? 'OK', data: data);
   }
 
-  /// Crear (POST) o editar (PUT) una recepción/entrega.
-  /// - Creación: `formData` lleva la cabecera + `sitios[]`; la respuesta trae `folio`.
-  /// - Edición: `formData` lleva `idLogistica` + `sitiosDel/sitiosAdd/sitiosEdit`;
-  Future<ServiceResponse<String>> recepcionEntrega(Map<String, dynamic> formData, bool re, bool isEdition) async {
-    final method = isEdition ? 'PUT' : 'POST';
-    String data = '';
-    String? message;
+  /// POST `/` — crear (bit W). Devuelve el `folio` generado por el server.
+  /// **Sin** `idUsuario` en el body. Respuesta `{ success:true, id, folio }`.
+  /// 400 validaciones / 409 folio duplicado llegan como `ApiException`.
+  Future<ServiceResponse<String>> createRecord(Map<String, dynamic> payload) async {
     try {
-      final response = await send(method, 'logistica/recepcionEntrega', body: formData);
-      if (response.statusCode >= 400) {
-        message = 'Error del servidor (${response.statusCode}): ${response.reasonPhrase}';
+      final res = await send('POST', _base, body: payload);
+      final body = jsonDecode(res.body);
+      final ok = body is Map && body['success'] == true;
+      final folio = body is Map ? body['folio'] : null;
+      if (!ok || folio is! String || folio.isEmpty) {
+        return ServiceResponse.error(
+          (body is Map ? body['message']?.toString() : null) ?? 'No se pudo crear el registro.',
+          statusCode: res.statusCode,
+        );
       }
-      late Map<String, dynamic> body;
-      try {
-        body = jsonDecode(response.body);
-      } on FormatException {
-        message = 'Error al interpretar la respuesta del servidor.';
-      }
-      if (body['success'] == true) {
-        data = body['folio'] ?? '';
-      } else {
-        message = body['message'] ?? 'Error desconocido';
-      }
-    } on HttpException catch (e) {
-      message = e.message;
+      return ServiceResponse.ok(folio, statusCode: res.statusCode);
+    } on ApiException catch (e) {
+      return ServiceResponse.error(
+        e.message.isNotEmpty ? e.message : 'No se pudo crear el registro.',
+        statusCode: e.statusCode,
+      );
+    } on SocketException {
+      return ServiceResponse.error('Sin conexión con el servidor.');
+    } on FormatException {
+      return ServiceResponse.error('No se pudo interpretar la respuesta del servidor.');
     } catch (e) {
-      DebugLog.error('Error: $e');
-      message = 'Ocurrió un error inesperado';
+      DebugLog.error('createRecord $e');
+      return ServiceResponse.error('Error inesperado al crear el registro.');
     }
-    return ServiceResponse(message == null,
-        message: message ?? '${re ? 'Recepción' : 'Entrega'} ${isEdition ? 'modificada' : 'creada'} con éxito.', data: data);
   }
 
-  Future<ServiceResponse<List<OptionSL>>> getXdocks() => _getCatalogList('logistica/rmXdocks', 'los XDOCKs');
-
-  Future<ServiceResponse<List<OptionSL>>> getMaterialTypes() =>
-      _getCatalogList('logistica/rmTiposMaterial', 'los tipos de material');
-
-  Future<ServiceResponse<List<OptionSL>>> getIncidenceTypes() =>
-      _getCatalogList('logistica/rmTiposIncidencia', 'los tipos de incidencia');
-
-  Future<ServiceResponse<List<OptionSL>>> getEvidenceTypes() =>
-      _getCatalogList('logistica/rmTiposEvidencia', 'los tipos de evidencia');
-
-  Future<ServiceResponse<List<OptionSL>>> getCarriers() => _getCatalogList('logistica/rmCarriers', 'los carriers');
-
-  Future<ServiceResponse<List<OptionSL>>> _getCatalogList(String endpoint, String listName,
-      {String method = 'GET', String kText = 'Nombre', String kValue = 'Id'}) async {
-    String? message;
-    List<OptionSL> data = [];
+  /// PUT `/{folio}` — editar (bit U, **solo dueño**), diff parcial.
+  /// El `folio` en la URL identifica el registro (sin `idLogistica` ni `idUsuario`).
+  /// `re` no se cambia.
+  /// Respuesta `{ success:true }`. 404 (no existe / no-dueño) / 400 llegan como `ApiException`.
+  Future<ServiceResponse<bool>> updateRecord(String folio, Map<String, dynamic> changes) async {
     try {
-      final response = await send(method, endpoint);
-      final responseBody = jsonDecode(response.body);
-      if (responseBody is List<dynamic>) {
-        data = responseBody.map((obj) => OptionSL(text: obj[kText].toString(), value: obj[kValue].toString())).toList();
-      } else {
-        DebugLog.warning(response.body);
-        message = 'Formato inesperado al obtener $listName';
+      final res = await send('PUT', '$_base/${Uri.encodeComponent(folio)}', body: changes);
+      final body = jsonDecode(res.body);
+      final ok = body is Map && body['success'] == true;
+      if (!ok) {
+        return ServiceResponse.error(
+          (body is Map ? body['message']?.toString() : null) ?? 'No se pudo actualizar el registro.',
+          statusCode: res.statusCode,
+        );
       }
-    } on HttpException catch (e) {
-      message = e.message;
+      return ServiceResponse.ok(true, statusCode: res.statusCode);
+    } on ApiException catch (e) {
+      return ServiceResponse.error(
+        e.message.isNotEmpty ? e.message : 'No se pudo actualizar el registro.',
+        statusCode: e.statusCode,
+      );
+    } on SocketException {
+      return ServiceResponse.error('Sin conexión con el servidor.');
+    } on FormatException {
+      return ServiceResponse.error('No se pudo interpretar la respuesta del servidor.');
     } catch (e) {
-      DebugLog.error('Error cargando $listName: $e');
-      message = 'Error cargando $listName';
+      DebugLog.error('updateRecord $e');
+      return ServiceResponse.error('Error inesperado al actualizar el registro.');
     }
-    return ServiceResponse(message == null, message: message ?? 'OK', data: data);
   }
 }

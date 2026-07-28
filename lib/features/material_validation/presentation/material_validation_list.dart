@@ -17,8 +17,8 @@ import 'package:gaso_tenant_app/core/list/base_list_screen.dart';
 import 'package:gaso_tenant_app/features/material_validation/data/material_validation_service.dart';
 import 'package:gaso_tenant_app/features/material_validation/domain/material_validation.dart';
 import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_form.dart';
-import 'package:gaso_tenant_app/features/material_validation/data/material_catalogs_service.dart';
-import 'package:gaso_tenant_app/features/material_validation/domain/material_catalogs.dart';
+import 'package:gaso_tenant_app/features/material_validation/data/validation_catalogs_service.dart';
+import 'package:gaso_tenant_app/features/material_validation/domain/validation_catalogs.dart';
 
 class MaterialValidationList extends StatefulWidget {
   const MaterialValidationList({super.key});
@@ -29,7 +29,7 @@ class MaterialValidationList extends StatefulWidget {
 
 class _MaterialValidationListState extends BaseListScreen<MaterialValidationList, MaterialValidation> {
   final MaterialValidationService _materialService = MaterialValidationService();
-  MaterialCatalogs? _catalogs;
+  ValidationCatalogs? _catalogs;
   final Preferences _preferences = Preferences();
   final ValueNotifier<String?> _type = ValueNotifier(null);
   final ValueNotifier<String?> _condition = ValueNotifier(null);

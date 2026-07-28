@@ -14,7 +14,5 @@ const materialLogisticsLetter = InfoLetter(
       'Si hay material faltante, describe qué falta.',
       'Las tarimas son opcionales (hasta 50 por sitio) y cada una requiere foto de tarima y de papeleta.',
     ]),
-    InfoLetterSection.text(
-        'Al guardar', 'Se genera el PDF del registro y se envía por correo a los destinatarios correspondientes.'),
   ],
 );

@@ -16,6 +16,9 @@ import 'package:gaso_tenant_app/features/material_validation/domain/material_val
 import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_detail.dart';
 import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_form.dart';
 import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_list.dart';
+import 'package:gaso_tenant_app/features/material_logistics/domain/material_logistics.dart';
+import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_shell.dart';
+import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_list.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -114,22 +117,30 @@ final Map<String, WidgetBuilder> appRoutes = {
   AppRoutes.materialValidation: (_) {
     return const RbacGate(viewCode: 'material_validation', require: kWriteMask, child: MaterialValidationForm());
   },
-  AppRoutes.materialValidationList: (_) => const RbacGate(viewCode: 'material_validation', child: MaterialValidationList()),
+  AppRoutes.materialValidationList: (_) {
+    return const RbacGate(viewCode: 'material_validation', child: MaterialValidationList());
+  },
   AppRoutes.materialValidationDetail: (context) {
     final args = ModalRoute.of(context)!.settings.arguments;
     final folio = args is String ? args : null;
     final material = args is MaterialValidation ? args : null;
-
-    return RbacGate(viewCode: 'material_validation', child: MaterialValidationDetail(folio: folio, materialValidation: material));
+    return RbacGate(
+      viewCode: 'material_validation',
+      child: MaterialValidationDetail(folio: folio, materialValidation: material),
+    );
   },
   AppRoutes.materialLogistics: (context) {
-    // final args = ModalRoute.of(context)!.settings.arguments;
-    // final record = args is MaterialLogistics ? args : null;
-
-    // child: MaterialLogisticsShell(record: record)
-    return const RbacGate(viewCode: 'material_logistics', require: kWriteMask, child: EnProceso());
+    final args = ModalRoute.of(context)!.settings.arguments;
+    final record = args is MaterialLogistics ? args : null;
+    return RbacGate(
+      viewCode: 'material_logistics',
+      require: kWriteMask,
+      child: MaterialLogisticsShell(record: record),
+    );
   },
-  AppRoutes.materialLogisticsList: (_) => const RbacGate(viewCode: 'material_logistics', child: EnProceso()),
+  AppRoutes.materialLogisticsList: (_) {
+    return const RbacGate(viewCode: 'material_logistics', child: MaterialLogisticsList());
+  },
   AppRoutes.operationExpenses: (_) {
     return const RbacGate(viewCode: 'requests_expenses', require: kWriteMask, child: EnProceso());
   },

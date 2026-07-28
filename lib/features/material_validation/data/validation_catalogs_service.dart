@@ -6,21 +6,21 @@ import 'package:gaso_tenant_app/core/http/http_service.dart';
 import 'package:gaso_tenant_app/core/http/service_response.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
 import 'package:gaso_tenant_app/core/tenant/tenant_context.dart';
-import 'package:gaso_tenant_app/features/material_validation/domain/material_catalogs.dart';
+import 'package:gaso_tenant_app/features/material_validation/domain/validation_catalogs.dart';
 
 /// Servicio stateless de catálogos:
 /// 1 sola llamada a `GET warehouses/material-validation/catalogs` (bit R).
-class MaterialCatalogsService extends HttpService {
+class ValidationCatalogsService extends HttpService {
   static const String _endpoint = 'warehouses/material-validation/catalogs';
 
-  Future<ServiceResponse<MaterialCatalogs>> getCatalogs() async {
+  Future<ServiceResponse<ValidationCatalogs>> getCatalogs() async {
     try {
       final res = await send('GET', _endpoint);
       final body = jsonDecode(res.body);
       if (body is! Map) {
         return ServiceResponse.error('Formato inesperado al obtener los catálogos.', statusCode: res.statusCode);
       }
-      return ServiceResponse.ok(MaterialCatalogs.fromJson(body.cast<String, dynamic>()), statusCode: res.statusCode);
+      return ServiceResponse.ok(ValidationCatalogs.fromJson(body.cast<String, dynamic>()), statusCode: res.statusCode);
     } on ApiException catch (e) {
       return ServiceResponse.error(
         e.message.isNotEmpty ? e.message : 'No se pudieron cargar los catálogos.',
@@ -55,19 +55,19 @@ class MaterialCatalogsCache {
   MaterialCatalogsCache._();
   static final MaterialCatalogsCache instance = MaterialCatalogsCache._();
 
-  final MaterialCatalogsService _service = MaterialCatalogsService();
+  final ValidationCatalogsService _service = ValidationCatalogsService();
 
   /// Vejez máxima aceptable dentro del mismo tenant.
   static const Duration ttl = Duration(minutes: 30);
 
-  MaterialCatalogs? _catalogs;
+  ValidationCatalogs? _catalogs;
   String? _slug;
   DateTime? _loadedAt;
-  Future<MaterialCatalogs>? _inflight;
+  Future<ValidationCatalogs>? _inflight;
 
   /// Acceso síncrono al último valor cargado (o `null` si aún no hay).
   /// Útil para builds posteriores al `await load()`.
-  MaterialCatalogs? get current => _catalogs;
+  ValidationCatalogs? get current => _catalogs;
 
   bool get _isFresh =>
       _catalogs != null &&
@@ -79,14 +79,14 @@ class MaterialCatalogsCache {
   /// si no, hace **una** petición (deduplicada).
   /// Lanza `Exception` con el mensaje del server si la carga falla
   /// (el caller muestra el error y deja los catálogos vacíos; el siguiente intento reintenta).
-  Future<MaterialCatalogs> load({bool forceRefresh = false}) {
+  Future<ValidationCatalogs> load({bool forceRefresh = false}) {
     final slug = TenantContext.instance.slug;
     if (slug != _slug) invalidate(); // cambio de tenant → nunca sirvas los del anterior
     if (!forceRefresh && _isFresh) return Future.value(_catalogs);
     return _inflight ??= _fetch(slug);
   }
 
-  Future<MaterialCatalogs> _fetch(String? slug) async {
+  Future<ValidationCatalogs> _fetch(String? slug) async {
     try {
       final res = await _service.getCatalogs();
       if (!res.success || res.data == null) {

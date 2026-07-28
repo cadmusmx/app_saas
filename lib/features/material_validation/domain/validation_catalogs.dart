@@ -4,7 +4,7 @@ import 'package:gaso_tenant_app/core/selection/option_sl.dart';
 /// Los campos distintos por clave:
 ///   almacenes {Id,Nombre} · proyectos {Id,Proyecto} · tiposMaterial {Id,Tipo} ·
 ///   carriers {Id,Carrier} · motivos {Id,Motivo} · estadosFisicos {Clave,Estado} (`estadosFisicos` usa `Clave` char, no `Id`).
-class MaterialCatalogs {
+class ValidationCatalogs {
   final List<OptionSL> warehouses; // almacenes
   final List<OptionSL> projects; // proyectos
   final List<OptionSL> materialTypes; // tiposMaterial
@@ -12,7 +12,7 @@ class MaterialCatalogs {
   final List<OptionSL> reasons; // motivos
   final List<OptionSL> physicalStatus; // estadosFisicos
 
-  const MaterialCatalogs({
+  const ValidationCatalogs({
     required this.warehouses,
     required this.projects,
     required this.materialTypes,
@@ -21,7 +21,7 @@ class MaterialCatalogs {
     required this.physicalStatus,
   });
 
-  const MaterialCatalogs.empty()
+  const ValidationCatalogs.empty()
     : warehouses = const [],
       projects = const [],
       materialTypes = const [],
@@ -29,7 +29,7 @@ class MaterialCatalogs {
       reasons = const [],
       physicalStatus = const [];
 
-  factory MaterialCatalogs.fromJson(Map<String, dynamic> json) => MaterialCatalogs(
+  factory ValidationCatalogs.fromJson(Map<String, dynamic> json) => ValidationCatalogs(
     warehouses: _parse(json['almacenes'], valueKey: 'Id', textKey: 'Nombre'),
     projects: _parse(json['proyectos'], valueKey: 'Id', textKey: 'Proyecto'),
     materialTypes: _parse(json['tiposMaterial'], valueKey: 'Id', textKey: 'Tipo'),

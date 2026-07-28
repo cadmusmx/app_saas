@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gaso_tenant_app/features/material_logistics/presentation/header_documents_section.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:gaso_tenant_app/app/router/routes.dart';
@@ -23,7 +24,8 @@ import 'package:gaso_tenant_app/core/services/messenger_service.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
 import 'package:gaso_tenant_app/core/storage/preferences.dart';
 import 'package:gaso_tenant_app/core/selection/option_sl.dart';
-import 'package:gaso_tenant_app/features/material_logistics/data/selection_lists.dart';
+import 'package:gaso_tenant_app/features/material_logistics/data/logistics_catalogs_service.dart';
+import 'package:gaso_tenant_app/features/material_logistics/domain/logistics_catalogs.dart';
 import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_holder.dart';
 import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_info.dart';
 
@@ -41,8 +43,7 @@ class HeaderForm extends StatefulWidget {
 class _HeaderFormState extends State<HeaderForm> {
   final _formKey = GlobalKey<FormState>();
   final _controllers = ControllersManager();
-  final XdocksSL _xdocksSL = XdocksSL();
-  final CarriersSL _carriersSL = CarriersSL();
+  late final LogisticsCatalogs? _catalogs;
   final Preferences _preferences = Preferences();
   final DraftManager _draftManager = DraftManager('material_logistics_draft');
   late final MaterialLogisticsHolder _holder;
@@ -77,13 +78,12 @@ class _HeaderFormState extends State<HeaderForm> {
   Future<void> _loadData() async {
     try {
       await _preferences.init();
-      if (_xdocksSL.list.isEmpty || _carriersSL.list.isEmpty) {
-        await Future.delayed(const Duration(seconds: 2));
-      }
+      _catalogs = await LogisticsCatalogsCache.instance.load();
       // Pre-llenado de texto libre desde el holder. En creación, Responsable ← nombre de sesión.
       _controllers.setValue(
         'responsable',
-        _holder.nombreResponsable ?? (_holder.isEdition ? (_holder.original?.responsable ?? '') : _sessionUser.user.name),
+        _holder.nombreResponsable ??
+            (_holder.isEdition ? (_holder.original?.responsable ?? '') : _sessionUser.user.name),
       );
       _controllers.setValue('unidadPlaca', _holder.unidadPlaca);
       _controllers.setValue('nombreOperador', _holder.nombreOperador);
@@ -197,8 +197,14 @@ class _HeaderFormState extends State<HeaderForm> {
     if (draft == null || !mounted) return;
     _holder.loadDraft(draft);
     // Reconciliar dropdowns de cabecera contra catálogo (descartar valores fantasma).
-    if (_xdocksSL.list.getByValue(_holder.idXdock ?? '') == null) _holder.setIdXdock(null);
-    if (_carriersSL.list.getByValue(_holder.idCarrier ?? '') == null) _holder.setIdCarrier(null);
+    final xdocks = _catalogs?.xdocks ?? const <OptionSL>[];
+    final carriers = _catalogs?.carriers ?? const <OptionSL>[];
+    if (xdocks.getByValue(_holder.idXdock ?? '') == null) _holder.setIdXdock(null);
+    if (carriers.getByValue(_holder.idCarrier ?? '') == null) {
+      _holder.setIdCarrier(null, esOtro: false);
+    } else {
+      _holder.setIdCarrier(_holder.idCarrier, esOtro: _catalogs?.isCarrierOtro(_holder.idCarrier) ?? false);
+    }
     // Reseed del texto libre.
     _controllers.setValue('responsable', _holder.nombreResponsable ?? _sessionUser.user.name);
     _controllers.setValue('unidadPlaca', _holder.unidadPlaca);
@@ -250,7 +256,9 @@ class _HeaderFormState extends State<HeaderForm> {
               isExpanded: true,
               initialValue: holder.idXdock,
               decoration: inputDec('XDOCK'),
-              items: _xdocksSL.list.map((e) => DropdownMenuItem(value: e.value, child: Text(e.text))).toList(),
+              items: (_catalogs?.xdocks ?? const <OptionSL>[])
+                  .map((e) => DropdownMenuItem(value: e.value, child: Text(e.text)))
+                  .toList(),
               onChanged: holder.setIdXdock,
               validator: (v) => FormValidators.requiredDropdown(v, 'XDOCK'),
             ),
@@ -261,14 +269,16 @@ class _HeaderFormState extends State<HeaderForm> {
               isExpanded: true,
               initialValue: holder.idCarrier,
               decoration: inputDec('Carrier'),
-              items: _carriersSL.list.map((e) => DropdownMenuItem(value: e.value, child: Text(e.text))).toList(),
-              onChanged: holder.setIdCarrier,
+              items: (_catalogs?.carriers ?? const <OptionSL>[])
+                  .map((e) => DropdownMenuItem(value: e.value, child: Text(e.text)))
+                  .toList(),
+              onChanged: (v) => holder.setIdCarrier(v, esOtro: _catalogs?.isCarrierOtro(v) ?? false),
               validator: (v) => FormValidators.requiredDropdown(v, 'carrier'),
             ),
           ),
         ],
       ),
-      if (holder.idCarrier == '4')
+      if (holder.carrierEsOtro)
         TextFormField(
           controller: _controllers.get('otroCarrier'),
           decoration: inputDec('Nombre carrier'),
@@ -347,6 +357,7 @@ class _HeaderFormState extends State<HeaderForm> {
                             itemCount: fields.length,
                             itemBuilder: (context, index) => fields[index],
                           ),
+                          const HeaderDocumentsSection(),
                           SectionTitle('Control de arribo'),
                           MasonryGridView.count(
                             crossAxisCount: ResponsiveHelper.crossAxisCount(constraints),

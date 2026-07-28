@@ -40,9 +40,9 @@ import 'package:gaso_tenant_app/core/helpers/connection_helper.dart';
 import 'package:gaso_tenant_app/core/helpers/generators_helper.dart';
 import 'package:gaso_tenant_app/core/helpers/input_formatters_helper.dart';
 import 'package:gaso_tenant_app/features/material_validation/domain/material_validation.dart';
-import 'package:gaso_tenant_app/features/material_validation/domain/material_catalogs.dart';
+import 'package:gaso_tenant_app/features/material_validation/domain/validation_catalogs.dart';
 import 'package:gaso_tenant_app/features/material_validation/data/material_validation_service.dart';
-import 'package:gaso_tenant_app/features/material_validation/data/material_catalogs_service.dart';
+import 'package:gaso_tenant_app/features/material_validation/data/validation_catalogs_service.dart';
 import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_info.dart';
 
 class MaterialValidationForm extends StatefulWidget {
@@ -60,7 +60,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
   final S3Service _s3Service = S3Service();
   final Preferences _preferences = Preferences();
   final LocationService _locationService = LocationService();
-  MaterialCatalogs? _catalogs;
+  ValidationCatalogs? _catalogs;
   final QrService _qrService = QrService();
   final _controllers = ControllersManager();
   late final PhotoManager _photoManager;

@@ -2,10 +2,12 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:gaso_tenant_app/core/http/service_response.dart';
 import 'package:gaso_tenant_app/core/services/s3_service.dart';
+import 'package:gaso_tenant_app/core/tenant/tenant_context.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
 import 'package:gaso_tenant_app/features/material_logistics/data/material_logistics_service.dart';
 import 'package:gaso_tenant_app/features/material_logistics/domain/material_logistics.dart';
 import 'package:gaso_tenant_app/features/material_logistics/domain/sitio_draft.dart';
+import 'package:gaso_tenant_app/features/material_logistics/domain/document_draft.dart';
 
 /// Vistas tope del shell. El orden coincide con los hijos del `IndexedStack`
 /// (`.index`): 0 = Cabecera, 1 = Sitios.
@@ -16,16 +18,15 @@ String _fmtDate(DateTime d) =>
 
 int? _toInt(String? v) => (v == null || v.isEmpty) ? null : int.tryParse(v);
 
-const String _evidenceFolder = 'material_logistics/';
+const String _feature = 'material_logistics';
 
 /// State holder del formulario de Logística de Material, con alcance de ruta.
 /// Ambas pantallas (Cabecera / Sitios) lo observan vía `provider`.
 ///
-/// Sin objetos de widget a propósito (los `TextEditingController`/`FormKey` viven
-/// en el `State` de cada pantalla). Texto libre → [commitHeader]; el resto
-/// (dropdowns, toggles, pickers) usa setters que notifican en el momento.
+/// Identidad del actor (`idUsuario`/`TenantID`) sale del token: **no** viaja en
+/// crear/editar. En edición el registro se identifica por `folio` en la URL del
+/// `PUT` (no `idLogistica` en el body).
 class MaterialLogisticsHolder extends ChangeNotifier {
-  // dentro de la clase: dependencias de I/O + dispose
   final MaterialLogisticsService _service = MaterialLogisticsService();
   final S3Service _s3 = S3Service();
 
@@ -35,13 +36,13 @@ class MaterialLogisticsHolder extends ChangeNotifier {
     super.dispose();
   }
 
-  /// En edición se entra directo a Sitios (resumen de cabecera + lista de sitios),
-  /// no a un wizard lineal; en creación se arranca por la Cabecera.
+  /// En edición se entra directo a Sitios; en creación se arranca por la Cabecera.
   MaterialLogisticsHolder({MaterialLogistics? record})
-      : _original = record,
-        _view = record != null ? LogisticsView.sitios : LogisticsView.cabecera {
+    : _original = record,
+      _view = record != null ? LogisticsView.sitios : LogisticsView.cabecera {
     _seedHeader(record);
     _seedSitios(record);
+    _seedDocumentos(record);
   }
 
   /// Snapshot tal como se cargó (null en creación). Base del diff de edición.
@@ -49,6 +50,9 @@ class MaterialLogisticsHolder extends ChangeNotifier {
   MaterialLogistics? get original => _original;
 
   bool get isEdition => _original != null;
+
+  /// Folio del registro en edición (para `PUT /{folio}`). '' en creación.
+  String get folio => _original?.folio ?? '';
 
   // Vista
   LogisticsView _view;
@@ -71,6 +75,7 @@ class MaterialLogisticsHolder extends ChangeNotifier {
   String? _idXdock; // value de OptionSL
   bool _re = true; // true = Recepción, false = Entrega (inmutable en edición)
   String? _idCarrier; // value de OptionSL
+  bool _carrierEsOtro = false; // resuelto del catálogo (no por id fijo)
   String _otroCarrier = '';
   String? _horaLlegada; // "HH:mm:ss"
   String? _horaInicioDescarga; // "HH:mm:ss"
@@ -89,6 +94,7 @@ class MaterialLogisticsHolder extends ChangeNotifier {
     _idXdock = r.idXdock != 0 ? r.idXdock.toString() : null;
     _re = r.re;
     _idCarrier = r.idCarrier != 0 ? r.idCarrier.toString() : null;
+    _carrierEsOtro = r.esOtro; // del registro; si el usuario lo cambia, el form lo re-resuelve
     _otroCarrier = r.otroCarrier ?? '';
     _horaLlegada = r.horaLlegada.isEmpty ? null : r.horaLlegada;
     _horaInicioDescarga = r.horaInicioDescarga.isEmpty ? null : r.horaInicioDescarga;
@@ -104,6 +110,7 @@ class MaterialLogisticsHolder extends ChangeNotifier {
   String? get idXdock => _idXdock;
   bool get re => _re;
   String? get idCarrier => _idCarrier;
+  bool get carrierEsOtro => _carrierEsOtro;
   String get otroCarrier => _otroCarrier;
   String? get horaLlegada => _horaLlegada;
   String? get horaInicioDescarga => _horaInicioDescarga;
@@ -132,9 +139,13 @@ class MaterialLogisticsHolder extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setIdCarrier(String? value) {
-    if (_idCarrier == value) return;
+  /// El `esOtro` lo resuelve el caller desde el catálogo (`LogisticsCatalogs.isCarrierOtro`),
+  /// nunca por `id == 4`. Si el carrier deja de ser "Otro", el nombre libre se limpia.
+  void setIdCarrier(String? value, {required bool esOtro}) {
+    if (_idCarrier == value && _carrierEsOtro == esOtro) return;
     _idCarrier = value;
+    _carrierEsOtro = esOtro;
+    if (!esOtro) _otroCarrier = '';
     notifyListeners();
   }
 
@@ -192,8 +203,7 @@ class MaterialLogisticsHolder extends ChangeNotifier {
 
   SitioDraft? getSitio(int index) => (index >= 0 && index < _sitios.length) ? _sitios[index] : null;
 
-  /// Alta (index null) o reemplazo (index dado) de un sitio. La pantalla pasa una
-  /// `copy()` ya editada; el reemplazo conserva el baseline para el diff.
+  /// Alta (index null) o reemplazo (index dado) de un sitio.
   void upsertSitio(SitioDraft draft, {int? index}) {
     if (index != null && index >= 0 && index < _sitios.length) {
       _sitios[index] = draft;
@@ -211,14 +221,54 @@ class MaterialLogisticsHolder extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Payloads
-  /// `idUsuario` se inyecta desde la sesión en el submit (Fase 7).
+  // Documentos de cabecera (bucket a nivel arribo — nuevo en la app)
+  final List<DocumentDraft> _documentos = [];
 
-  /// Cabecera + `sitios:[...]`. `re`/`confirmado` van en creación.
-  Map<String, dynamic> buildCreatePayload({required int idUsuario}) {
-    final carrierId = _toInt(_idCarrier);
-    return {
-      'idUsuario': idUsuario,
+  void _seedDocumentos(MaterialLogistics? r) {
+    if (r == null) return;
+    _documentos.addAll(r.documentos.whereType<Map>().map((d) => DocumentDraft.fromRead(d.cast<String, dynamic>())));
+  }
+
+  List<DocumentDraft> get documentos => List.unmodifiable(_documentos);
+
+  void addDocumento(DocumentDraft doc) {
+    _documentos.add(doc);
+    notifyListeners();
+  }
+
+  void updateDocumento(int index, DocumentDraft doc) {
+    if (index < 0 || index >= _documentos.length) return;
+    _documentos[index] = doc;
+    notifyListeners();
+  }
+
+  void removeDocumento(int index) {
+    if (index < 0 || index >= _documentos.length) return;
+    _documentos.removeAt(index);
+    notifyListeners();
+  }
+
+  /// True si el set de documentos difiere del original (contenido) o hay alguno
+  /// pendiente de subir. Base del reemplazo total en update: si cambió, se manda
+  /// la lista completa vigente; si no, se omite.
+  bool get _documentosChanged {
+    final base =
+        _original?.documentos.whereType<Map>().map((d) => DocumentDraft.fromRead(d.cast<String, dynamic>())).toList() ??
+        const <DocumentDraft>[];
+    if (_documentos.any((d) => d.localPath != null && d.localPath!.isNotEmpty)) return true;
+    if (_documentos.length != base.length) return true;
+    for (var i = 0; i < _documentos.length; i++) {
+      if (!_documentos[i].sameAs(base[i])) return true;
+    }
+    return false;
+  }
+
+  // Payloads
+
+  /// Cabecera + `sitios:[...]` + `documentos:[...]` (opcional). **Sin** `idUsuario`.
+  /// `re`/`confirmado` van en creación.
+  Map<String, dynamic> buildCreatePayload() {
+    final payload = <String, dynamic>{
       'fecha': _fecha != null ? _fmtDate(_fecha!) : null,
       'idXdock': _toInt(_idXdock),
       'nombreResponsable': _nombreResponsable, // null = usuario
@@ -229,21 +279,21 @@ class MaterialLogisticsHolder extends ChangeNotifier {
       'horaSalida': _horaSalida,
       'confirmado': _confirmado,
       're': _re,
-      'idCarrier': carrierId,
-      'otroCarrier': carrierId == 4 ? (_otroCarrier.isEmpty ? null : _otroCarrier) : null,
+      'idCarrier': _toInt(_idCarrier),
+      'otroCarrier': _carrierEsOtro ? (_otroCarrier.isEmpty ? null : _otroCarrier) : null,
       'sitios': _sitios.map((s) => s.toCreateJson()).toList(),
     };
+    if (_documentos.isNotEmpty) {
+      payload['documentos'] = _documentos.map((d) => d.toJson()).toList();
+    }
+    return payload;
   }
 
-  /// Diff de cabecera (COALESCE: campo ausente = sin cambio) + sitios por diff.
-  /// `RE`/`confirmado` no se envían. `nombreResponsable`: `""` = limpiar (usar usuario).
-  /// `otroCarrier` solo se envía con carrier 4; si deja de ser 4, el SP lo limpia solo.
-  Map<String, dynamic> buildUpdatePayload({required int idUsuario}) {
+  /// Diff de cabecera (COALESCE: campo ausente = sin cambio) + sitios por diff + documentos por reemplazo total.
+  /// `re`/`confirmado` no se envían. `nombreResponsable`: `""` = limpiar (usar usuario).
+  Map<String, dynamic> buildUpdatePayload() {
     final o = _original!; // edición garantiza snapshot
-    final payload = <String, dynamic>{
-      'idLogistica': o.id,
-      'idUsuario': idUsuario,
-    };
+    final payload = <String, dynamic>{};
 
     final fechaStr = _fecha != null ? _fmtDate(_fecha!) : null;
     if (fechaStr != null && fechaStr != o.fecha) payload['fecha'] = fechaStr;
@@ -263,8 +313,8 @@ class MaterialLogisticsHolder extends ChangeNotifier {
 
     final carrierId = _toInt(_idCarrier);
     if (carrierId != null && carrierId != o.idCarrier) payload['idCarrier'] = carrierId;
-    // otroCarrier: solo con carrier 4 y si cambió; el SP autolimpia al dejar de ser 4.
-    if (carrierId == 4) {
+    // otroCarrier: solo con carrier "Otro" (por catálogo) y si cambió; el SP auto-limpia al dejar de serlo.
+    if (_carrierEsOtro) {
       final otro = _otroCarrier.isEmpty ? null : _otroCarrier;
       if (otro != o.otroCarrier) payload['otroCarrier'] = otro;
     }
@@ -275,31 +325,39 @@ class MaterialLogisticsHolder extends ChangeNotifier {
     final edit = _sitios.where((s) => !s.isNew && s.hasChanges).map((s) => s.toEditJson()).toList();
     if (edit.isNotEmpty) payload['sitiosEdit'] = edit;
 
+    // Documentos: reemplazo total. Si cambió, manda la lista completa vigente
+    // ([] borra todos); si no cambió, se omite (sin cambio).
+    if (_documentosChanged) {
+      payload['documentos'] = _documentos.map((d) => d.toJson()).toList();
+    }
+
     return payload;
   }
 
-  /// Borrador (solo creación; el caller guarda con `!isEdition`). Excluye evidencias.
+  /// Borrador (solo creación). Excluye archivos (evidencias, tarimas, documentos).
   Map<String, dynamic> buildDraft() => {
-        'fecha': _fecha?.toIso8601String(),
-        'idXdock': _idXdock,
-        're': _re,
-        'idCarrier': _idCarrier,
-        'otroCarrier': _otroCarrier,
-        'horaLlegada': _horaLlegada,
-        'horaInicioDescarga': _horaInicioDescarga,
-        'horaSalida': _horaSalida,
-        'nombreResponsable': _nombreResponsable,
-        'unidadPlaca': _unidadPlaca,
-        'nombreOperador': _nombreOperador,
-        // 'confirmado' excluido a propósito: el usuario re-confirma al restaurar.
-        'sitios': _sitios.map((s) => s.toDraftJson()).toList(),
-      };
+    'fecha': _fecha?.toIso8601String(),
+    'idXdock': _idXdock,
+    're': _re,
+    'idCarrier': _idCarrier,
+    'carrierEsOtro': _carrierEsOtro,
+    'otroCarrier': _otroCarrier,
+    'horaLlegada': _horaLlegada,
+    'horaInicioDescarga': _horaInicioDescarga,
+    'horaSalida': _horaSalida,
+    'nombreResponsable': _nombreResponsable,
+    'unidadPlaca': _unidadPlaca,
+    'nombreOperador': _nombreOperador,
+    // 'confirmado' excluido a propósito: el usuario re-confirma al restaurar.
+    'sitios': _sitios.map((s) => s.toDraftJson()).toList(),
+  };
 
   void loadDraft(Map<String, dynamic> json) {
     _fecha = DateTime.tryParse(json['fecha'] ?? '') ?? _fecha;
     _idXdock = json['idXdock'];
     _re = json['re'] ?? _re;
     _idCarrier = json['idCarrier'];
+    _carrierEsOtro = json['carrierEsOtro'] ?? false;
     _otroCarrier = json['otroCarrier'] ?? '';
     _horaLlegada = json['horaLlegada'];
     _horaInicioDescarga = json['horaInicioDescarga'];
@@ -311,11 +369,12 @@ class MaterialLogisticsHolder extends ChangeNotifier {
     _sitios
       ..clear()
       ..addAll(
-          (json['sitios'] as List? ?? const []).map((s) => SitioDraft.fromDraft(Map<String, dynamic>.from(s as Map))));
+        (json['sitios'] as List? ?? const []).map((s) => SitioDraft.fromDraft(Map<String, dynamic>.from(s as Map))),
+      );
     notifyListeners();
   }
 
-  /// Mime inferido del path local (las tarimas no guardan mimeType; siempre son imagen).
+  /// Mime inferido del path local (las tarimas no guardan mimeType; siempre imagen).
   String _mimeFromPath(String path) {
     final p = path.toLowerCase();
     if (p.endsWith('.png')) return 'image/png';
@@ -323,28 +382,39 @@ class MaterialLogisticsHolder extends ChangeNotifier {
     return 'image/jpeg';
   }
 
-  /// Sube un archivo local a S3, borra la key anterior si la había y devuelve la nueva key relativa.
-  /// Lanza Exception si la subida falla.
+  /// Carpeta relativa base por tenant + usuario: `{slug}/material_logistics/{idUsuario}/`.
+  /// El prefijo de entorno (`Qa/`|`Pr/`) lo antepone `S3Service` de forma global.
+  /// Alinea la llave con `material_validation` (`{slug}/material_validation/{userId}/…`).
+  String _baseFolder(int idUsuario) {
+    final slug = TenantContext.instance.slug;
+    final tenant = (slug != null && slug.isNotEmpty) ? '$slug/' : '';
+    return '$tenant$_feature/$idUsuario/';
+  }
+
+  /// Sube un archivo local a S3, borra la key anterior si la había y devuelve la
+  /// nueva key relativa. Lanza Exception si la subida falla.
   Future<String> _uploadFile({
     required String localPath,
     required String contentType,
     required String oldKey,
-    required int idUsuario,
+    required String folder,
     required int stamp,
     required int seq,
   }) async {
     final bytes = await File(localPath).readAsBytes();
     final ext = contentType.contains('pdf') ? 'pdf' : (contentType.contains('png') ? 'png' : 'jpg');
-    final key = '$_evidenceFolder$idUsuario/$stamp-$seq.$ext';
+    final key = '$folder$stamp-$seq.$ext';
     final url = await _s3.uploadU8LToS3(bytes, key, contentType);
     if (url == null) throw Exception('Falló la subida a S3 ($key)');
     if (oldKey.isNotEmpty) await _s3.deleteFromS3(oldKey);
     return key;
   }
 
-  /// Sube las evidencias y tarimas (par de fotos) `localPath`,
+  /// Sube evidencias/tarimas por sitio y documentos de cabecera pendientes,
   /// fija sus keys relativas y borra las anteriores si las había.
   Future<bool> _uploadPendingFiles(int idUsuario) async {
+    final base = _baseFolder(idUsuario);
+    final docsFolder = '${base}docs/';
     final stamp = DateTime.now().millisecondsSinceEpoch;
     int seq = 0;
     try {
@@ -353,12 +423,13 @@ class MaterialLogisticsHolder extends ChangeNotifier {
           final lp = e.localPath;
           if (lp != null && lp.isNotEmpty) {
             e.archivo = await _uploadFile(
-                localPath: lp,
-                contentType: e.mimeType,
-                oldKey: e.archivo,
-                idUsuario: idUsuario,
-                stamp: stamp,
-                seq: seq++);
+              localPath: lp,
+              contentType: e.mimeType,
+              oldKey: e.archivo,
+              folder: base,
+              stamp: stamp,
+              seq: seq++,
+            );
             e.localPath = null;
           }
         }
@@ -366,25 +437,42 @@ class MaterialLogisticsHolder extends ChangeNotifier {
           final tlp = t.tarimaLocalPath;
           if (tlp != null && tlp.isNotEmpty) {
             t.tarimaFoto = await _uploadFile(
-                localPath: tlp,
-                contentType: _mimeFromPath(tlp),
-                oldKey: t.tarimaFoto,
-                idUsuario: idUsuario,
-                stamp: stamp,
-                seq: seq++);
+              localPath: tlp,
+              contentType: _mimeFromPath(tlp),
+              oldKey: t.tarimaFoto,
+              folder: base,
+              stamp: stamp,
+              seq: seq++,
+            );
             t.tarimaLocalPath = null;
           }
           final plp = t.papeletaLocalPath;
           if (plp != null && plp.isNotEmpty) {
             t.papeletaFoto = await _uploadFile(
-                localPath: plp,
-                contentType: _mimeFromPath(plp),
-                oldKey: t.papeletaFoto,
-                idUsuario: idUsuario,
-                stamp: stamp,
-                seq: seq++);
+              localPath: plp,
+              contentType: _mimeFromPath(plp),
+              oldKey: t.papeletaFoto,
+              folder: base,
+              stamp: stamp,
+              seq: seq++,
+            );
             t.papeletaLocalPath = null;
           }
+        }
+      }
+      // Documentos de cabecera.
+      for (final d in _documentos) {
+        final lp = d.localPath;
+        if (lp != null && lp.isNotEmpty) {
+          d.archivo = await _uploadFile(
+            localPath: lp,
+            contentType: d.mimeType.isNotEmpty ? d.mimeType : _mimeFromPath(lp),
+            oldKey: d.archivo,
+            folder: docsFolder,
+            stamp: stamp,
+            seq: seq++,
+          );
+          d.localPath = null;
         }
       }
       return true;
@@ -394,19 +482,25 @@ class MaterialLogisticsHolder extends ChangeNotifier {
     }
   }
 
-  /// Sube evidencias pendientes y envía (create o update). `idUsuario` de sesión.
-  /// La pantalla muestra `response.message`.
+  /// Sube archivos pendientes y envía (create o update).
+  /// `idUsuario` de sesión (solo para la ruta de la llave S3; no viaja en el payload).
+  /// La pantalla muestra `response.message`; `data` = folio (create) o el folio en edición.
   Future<ServiceResponse<String>> submit({required int idUsuario}) async {
     if (!await _uploadPendingFiles(idUsuario)) {
-      return ServiceResponse(false, message: 'Error al subir uno o más archivos.', data: '');
+      return ServiceResponse.error('Error al subir uno o más archivos.');
     }
+    final tipo = _re ? 'Recepción' : 'Entrega';
     if (isEdition) {
-      final payload = buildUpdatePayload(idUsuario: idUsuario);
-      if (payload.length <= 2) {
-        return ServiceResponse(false, message: 'No se hicieron cambios.', data: '');
+      final payload = buildUpdatePayload();
+      if (payload.isEmpty) {
+        return ServiceResponse.error('No se hicieron cambios.');
       }
-      return _service.recepcionEntrega(payload, _re, true);
+      final res = await _service.updateRecord(folio, payload);
+      if (!res.success) return ServiceResponse.error(res.message, statusCode: res.statusCode);
+      return ServiceResponse(true, data: folio, message: '$tipo actualizada con éxito.', statusCode: res.statusCode);
     }
-    return _service.recepcionEntrega(buildCreatePayload(idUsuario: idUsuario), _re, false);
+    final res = await _service.createRecord(buildCreatePayload());
+    if (!res.success) return res;
+    return ServiceResponse(true, data: res.data, message: '$tipo creada con éxito.', statusCode: res.statusCode);
   }
 }

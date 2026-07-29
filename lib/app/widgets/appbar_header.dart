@@ -4,7 +4,7 @@ import 'package:gaso_tenant_app/features/notifications/presentation/notification
 
 class AppBarHeader extends StatefulWidget implements PreferredSizeWidget {
   final bool showNotifications;
-  final String title;
+  final String? title;
   final List<Widget>? actions;
   final Widget? leading;
 
@@ -34,7 +34,7 @@ class _AppBarHeaderState extends State<AppBarHeader> {
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(child: Text(widget.title.toUpperCase(), overflow: TextOverflow.ellipsis, maxLines: 1)),
+          Expanded(child: Text(widget.title?.toUpperCase() ?? '', overflow: TextOverflow.ellipsis, maxLines: 1)),
           if (widget.showNotifications)
             ValueListenableBuilder<int>(
               valueListenable: _notificationService.notificationCount,

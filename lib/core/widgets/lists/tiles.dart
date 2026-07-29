@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:gaso_tenant_app/core/access/access_validator.dart';
 
 class BaseListTile extends StatelessWidget {
   final String title;
@@ -155,12 +154,6 @@ class DrawerOption {
   IconData icon;
   bool released;
   DrawerOption({this.path, required this.title, required this.icon, this.released = true});
-}
-
-class DrawerOptionAV extends AccessValidator {
-  final DrawerOption option;
-  DrawerOptionAV(this.option, {List<List<String>> config = AccessConfig.all, bool strict = false})
-      : super(config, strict);
 }
 
 class DrawerListTile extends StatelessWidget {

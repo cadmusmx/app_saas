@@ -85,10 +85,9 @@ class _HomeScreenState extends State<HomeScreen> {
     TextTheme textTheme = Theme.of(context).textTheme;
     final auth = context.watch<AuthContext>();
     final menuList = visibleMenu(auth).where((it) => auth.canWrite(it.viewCode)).toList();
-    final user = auth.current;
 
     return Scaffold(
-      appBar: AppBarHeader(user?.branding.displayName ?? 'INICIO', showNotifications: true),
+      appBar: AppBarHeader(auth.branding?.displayName, showNotifications: true),
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth == 0 || constraints.maxHeight == 0) {
@@ -111,7 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: textTheme.bodyMedium,
                         children: <TextSpan>[
                           TextSpan(
-                            text: user?.branding.displayName ?? 'SU TENANT',
+                            text: auth.branding?.displayName ?? 'SU TENANT',
                             style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.primary),
                           ),
                           const TextSpan(text: ' PARA SABER MÁS ACERCA DE LO QUE PUEDE LOGRAR'),

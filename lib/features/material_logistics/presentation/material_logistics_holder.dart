@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:gaso_tenant_app/core/http/service_response.dart';
 import 'package:gaso_tenant_app/core/services/s3_service.dart';
 import 'package:gaso_tenant_app/core/tenant/tenant_context.dart';
@@ -403,11 +404,12 @@ class MaterialLogisticsHolder extends ChangeNotifier {
   }) async {
     final bytes = await File(localPath).readAsBytes();
     final ext = contentType.contains('pdf') ? 'pdf' : (contentType.contains('png') ? 'png' : 'jpg');
-    final key = '$folder$stamp-$seq.$ext';
-    final url = await _s3.uploadU8LToS3(bytes, key, contentType);
-    if (url == null) throw Exception('Falló la subida a S3 ($key)');
+    final relKey = '$folder$stamp-$seq.$ext';
+    final fullKey = '${Config.s3Folder}/$relKey';
+    final url = await _s3.uploadU8LToS3(bytes, fullKey, contentType);
+    if (url == null) throw Exception('Falló la subida a S3 ($fullKey)');
     if (oldKey.isNotEmpty) await _s3.deleteFromS3(oldKey);
-    return key;
+    return fullKey;
   }
 
   /// Sube evidencias/tarimas por sitio y documentos de cabecera pendientes,

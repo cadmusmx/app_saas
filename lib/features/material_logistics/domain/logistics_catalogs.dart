@@ -1,9 +1,9 @@
 import 'package:gaso_tenant_app/core/selection/option_sl.dart';
 
-/// Catálogos de Logística de Material en un solo holder (reemplaza los 5 GET legacy → `GET /catalogs`).
+/// Catálogos de Logística de Material en un solo holder.
 /// Cada lista se normaliza a `List<OptionSL>` (`value` = clave, `text` = etiqueta).
 ///
-/// Campos por clave (contrato §3.1):
+/// Campos por clave:
 ///   xdocks {Id,Nombre} · tiposMaterial {Id,Nombre} · tiposIncidencia {Id,Nombre} ·
 ///   tiposEvidencia {Id,Nombre} · carriers {Id,Carrier,EsOtro}.
 ///

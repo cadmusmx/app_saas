@@ -12,9 +12,9 @@ class S3Service {
   final String _accessKey = Env.s3AccessKey;
   final String _secretKey = Env.s3SecretKey;
 
-  /// Antepone el folder de entorno (`Qa/`|`Pr/`) a la llave RELATIVA que guarda la app,
-  /// para que el objeto viva donde `Config.s3Url` lo lee.
-  /// Es global (todo feature que suba hereda el prefijo) e idempotente.
+  /// Antepone el folder de entorno (`Qa/`|`Pr/`) SI la llave no lo trae. Con las
+  /// llaves completas que hoy compone la app es un no-op idempotente; queda como
+  /// defensa por si algún caller pasara una llave relativa.
   String _resolveKey(String key) {
     final folder = '${Config.s3Folder}/';
     return key.startsWith(folder) ? key : '$folder$key';

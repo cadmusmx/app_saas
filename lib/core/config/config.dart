@@ -6,17 +6,17 @@ class Config {
   /// Entorno lógico de la app: dev | qa | prod.
   static const AppEnv appEnv = AppEnv.qa;
 
-  /// URL base de la API, En producción se genera en base al slug-tenant del usuario en sesión (PENDIENTE)
+  /// URL base de la API, En producción se genera en base al slug-tenant del usuario en sesión
   static const String apiUrl = 'http://10.0.2.2:3000/api/';
 
-  /// Carpeta S3 por entorno (`Qa`/`Pr`). Se antepone a TODA llave de objeto:
-  /// la escritura la resuelve `S3Service`; la lectura la antepone `s3Url`.
+  /// Carpeta S3 por entorno (`Qa`/`Pr`).
+  /// Se hornea en la llave completa que guarda la app; `S3Service._resolveKey` la respeta de forma idempotente al escribir.
   static String get s3Folder => appEnv == AppEnv.prod ? 'Pr' : 'Qa';
 
-  /// Base pública de S3 (lectura). Incluye el folder de entorno y toma la región
-  /// de `Env.s3Region` —la misma que usa `S3Service` al escribir— para que la URL
-  /// de lectura apunte exactamente a donde quedó el objeto.
-  static String get s3Url => 'https://${Env.s3Bucket}.s3.${Env.s3Region}.amazonaws.com/$s3Folder/';
+  /// Raíz pública del bucket (lectura).
+  /// NO incluye el entorno: este ya viene dentro de la llave completa almacenada (`Qa/…`|`Pr/…`).
+  /// Región desde `Env.s3Region`.
+  static String get s3Url => 'https://${Env.s3Bucket}.s3.${Env.s3Region}.amazonaws.com/';
 
   /// Header de tenant que espera el BFF.
   static const String tenantHeaderName = 'x-tenant-slug';

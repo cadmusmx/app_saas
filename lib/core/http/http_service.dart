@@ -55,14 +55,16 @@ abstract class HttpService {
     return _execute(method, endpoint, headers: _baseHeaders, body: body, authenticated: false);
   }
 
-  String getApiUrl() {
+  // Implementación interna
+
+  /// Retorna la API url basada en el entorno, en producción se genera con el slug del tenant actual
+  String _getApiUrl() {
+    if (Config.appEnv != AppEnv.prod) return Config.apiUrl;
     final Tenant? tenantContext = TenantContext.instance.current;
     if (tenantContext == null) return Config.apiUrl;
     final String slug = tenantContext.slug;
     return 'https://$slug:3000/api/';
   }
-
-  // Implementación interna
 
   Future<Response> _execute(
     String method,
@@ -72,9 +74,7 @@ abstract class HttpService {
     Map<String, dynamic>? body,
     bool useIOClient = false,
   }) async {
-    final prodApiUrl = getApiUrl(); // temp
-    DebugLog.info('API en producción: $prodApiUrl'); // temp
-    final apiUrl = Config.appEnv == AppEnv.prod ? getApiUrl() : Config.apiUrl;
+    final apiUrl = _getApiUrl();
     final uri = Uri.parse('$apiUrl$endpoint');
     final encodedBody = body != null ? jsonEncode(body) : null;
     final client = useIOClient ? buildClient() : _client;

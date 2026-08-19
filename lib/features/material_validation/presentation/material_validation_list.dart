@@ -177,8 +177,9 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
                   title: Text('${doc['name'] ?? ''}', overflow: TextOverflow.ellipsis),
                   trailing: const Icon(Icons.open_in_new, size: 18),
                   onTap: () {
-                    final url = doc['file'] as String? ?? '';
-                    if (url.isEmpty) return;
+                    final raw = doc['file'] as String? ?? '';
+                    if (raw.isEmpty) return;
+                    final url = raw.startsWith('http') ? raw : '${Config.s3Url}$raw';
                     if (isPdf(url)) {
                       launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
                     } else {

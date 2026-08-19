@@ -359,8 +359,11 @@ class _DocumentosSection extends StatelessWidget {
   bool _isPdf(String? url) => url?.toLowerCase().contains('.pdf') ?? false;
 
   void _openDoc(BuildContext ctx, dynamic doc) {
-    final url = doc['file'] as String? ?? '';
-    if (url.isEmpty) return;
+    final raw = doc['file'] as String? ?? '';
+    if (raw.isEmpty) return;
+    // `file` es la llave completa (Qa/…); anteponemos la raíz del bucket.
+    // Guard http:// por si algún registro legacy guardó la URL completa.
+    final url = raw.startsWith('http') ? raw : '${Config.s3Url}$raw';
     if (_isPdf(url)) {
       launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } else {

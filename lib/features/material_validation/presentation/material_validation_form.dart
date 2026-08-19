@@ -111,7 +111,10 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
     if (session != null && session.user.id != null) {
       _sessionUser = session;
       _sessionReady = true;
-      _photosFolder = '${_sessionUser.tenant.slug}/material_validation/';
+      // Llave base COMPLETA: incluye el folder de entorno (`Qa/`|`Pr/`). Así fotos,
+      // QR y documentos se guardan con la llave completa y el display (Config.s3Url
+      // = raíz del bucket) resuelve exacto, sin inyecciones al vuelo.
+      _photosFolder = '${Config.s3Folder}/${_sessionUser.tenant.slug}/material_validation/';
       _draftManager = DraftManager('material_validation_draft');
       _photoManager = PhotoManager(s3Service: _s3Service, userId: _sessionUser.user.id!, photosFolder: _photosFolder);
       _loadData();
@@ -930,10 +933,10 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
       final doc = _documentos[i];
       final lp = doc['localPath'];
       if (lp == null || lp.isEmpty) continue;
-      final oldUrl = doc['file'];
-      final oldKey = (oldUrl != null && oldUrl.isNotEmpty)
-          ? oldUrl.replaceFirst(Config.s3Url, '') // extrae la key quitando el prefijo del bucket
-          : null;
+      // `file` es la llave completa (Qa/…). replaceFirst es robusto por si un
+      // registro legacy guardó la URL completa: en ese caso extrae la llave.
+      final prev = doc['file'];
+      final oldKey = (prev != null && prev.isNotEmpty) ? prev.replaceFirst(Config.s3Url, '') : null;
       try {
         final bytes = await File(lp).readAsBytes();
         final mime = doc['mimeType'] ?? 'image/jpeg';
@@ -950,7 +953,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
         }
         if (mounted) {
           setState(() {
-            _documentos[i]['file'] = url;
+            _documentos[i]['file'] = path; // guarda la LLAVE completa (no la URL)
             _documentos[i].remove('localPath');
             _documentos[i].remove('mimeType');
           });

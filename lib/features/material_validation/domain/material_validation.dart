@@ -49,6 +49,8 @@ enum EMaterialValidation {
   Tarimas,
   Cancelada,
   Vinculado, // Id del vínculo o null (viene en /search y /{folio})
+  FolioSalida, // (§4.2) entrada ya extendida → habilita "Ver salida"
+  FolioOrigen, // (§4.2) salida derivada → habilita "Ver entrada de origen"
 }
 
 class MaterialValidation {
@@ -99,6 +101,14 @@ class MaterialValidation {
   /// Id del vínculo o `null`. Permite saber si el folio ya está vinculado sin pegarle a `GET /linked` (el server ya lo trae en `/search` y `/{folio}`).
   final int? vinculado;
 
+  /// (§4.2) Folio de la salida que extendió esta entrada, o `null`. Gobierna
+  /// "Ver salida" en detalle/item y el candado de re-salida.
+  final String? folioSalida;
+
+  /// (§4.2) Folio de la entrada de origen si esta fila es una salida derivada,
+  /// o `null`. Habilita "Ver entrada de origen".
+  final String? folioOrigen;
+
   MaterialValidation({
     required this.id,
     required this.idUsuario,
@@ -140,6 +150,8 @@ class MaterialValidation {
     required this.tarimas,
     required this.cancelada,
     required this.vinculado,
+    required this.folioSalida,
+    required this.folioOrigen,
   });
 
   /// `true` si el registro pertenece a [userId]. Base de la regla "solo el dueño edita" que consume la lista para mostrar/ocultar *Editar*.
@@ -188,6 +200,8 @@ class MaterialValidation {
       tarimas: _decodeMap(json[k(EMaterialValidation.Tarimas)]),
       cancelada: _asBool(json[k(EMaterialValidation.Cancelada)]),
       vinculado: _asInt(json[k(EMaterialValidation.Vinculado)]),
+      folioSalida: _strN(json[k(EMaterialValidation.FolioSalida)]),
+      folioOrigen: _strN(json[k(EMaterialValidation.FolioOrigen)]),
     );
   }
 }

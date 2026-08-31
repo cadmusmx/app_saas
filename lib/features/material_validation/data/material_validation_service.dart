@@ -6,6 +6,7 @@ import 'package:gaso_tenant_app/core/http/http_service.dart';
 import 'package:gaso_tenant_app/core/http/service_response.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
 import 'package:gaso_tenant_app/features/material_validation/domain/material_validation.dart';
+import 'package:gaso_tenant_app/features/material_validation/domain/verify_folio_result.dart';
 
 /// Capa de datos de Validación de Material contra el BFF multi-tenant.
 ///
@@ -181,6 +182,73 @@ class MaterialValidationService extends HttpService {
     } catch (e) {
       DebugLog.error('verifyLinkedFolio $e');
       return ServiceResponse.error('Error al verificar el folio.');
+    }
+  }
+
+  /// GET `/verify-folio?folio=<valor>` — veredicto para "Dar salida" (bit R).
+  /// Acepta folio tecleado, escaneado como texto o el **deep link completo**
+  /// (`gasosaas://mv/…`); el server hace strip del esquema y normaliza el
+  /// prefijo. Responde 200 siempre con `reason`; el 400 (falta `folio`) llega
+  /// como `ApiException`. El folio va en la query (no como body) por la
+  /// traducción GET-body→query de `HttpService`. Fail-closed: ante error de
+  /// red/formato el caller no abre el form.
+  Future<ServiceResponse<VerifyFolioResult>> verifyFolioForOut(String folio) async {
+    try {
+      final res = await send('GET', '$_base/verify-folio?folio=${Uri.encodeComponent(folio)}');
+      final body = jsonDecode(res.body);
+      if (body is! Map || body['success'] != true) {
+        return ServiceResponse.error(
+          (body is Map ? body['message']?.toString() : null) ?? 'No se pudo verificar el folio.',
+          statusCode: res.statusCode,
+        );
+      }
+      return ServiceResponse.ok(VerifyFolioResult.fromJson(body.cast<String, dynamic>()), statusCode: res.statusCode);
+    } on ApiException catch (e) {
+      return ServiceResponse.error(
+        e.message.isNotEmpty ? e.message : 'No se pudo verificar el folio.',
+        statusCode: e.statusCode,
+      );
+    } on SocketException {
+      return ServiceResponse.error('Sin conexión con el servidor.');
+    } on FormatException {
+      return ServiceResponse.error('No se pudo interpretar la respuesta del servidor.');
+    } catch (e) {
+      DebugLog.error('verifyFolioForOut $e');
+      return ServiceResponse.error('Error al verificar el folio.');
+    }
+  }
+
+  /// POST `/out?directQR=true` — crea la salida derivada (bit W). Devuelve el
+  /// `folioOut`. La app manda el `folioOut` ya generado + su `qr` (obligatorio
+  /// en modo directo). El resto del material lo hereda el server desde el IN.
+  /// El **409** (`ApiException`, statusCode 409) = la entrada ya fue extendida
+  /// en una carrera → el caller lo mapea a "esta entrada ya tiene salida".
+  /// Respuesta: `{ success:true, idOut, folioOut }`.
+  Future<ServiceResponse<String>> createOut(Map<String, dynamic> payload) async {
+    try {
+      final res = await send('POST', '$_base/out?directQR=true', body: payload);
+      final body = jsonDecode(res.body);
+      final ok = body is Map && body['success'] == true;
+      final folioOut = body is Map ? body['folioOut']?.toString() : null;
+      if (!ok || folioOut == null || folioOut.isEmpty) {
+        return ServiceResponse.error(
+          (body is Map ? body['message']?.toString() : null) ?? 'No se pudo crear la salida.',
+          statusCode: res.statusCode,
+        );
+      }
+      return ServiceResponse.ok(folioOut, statusCode: res.statusCode);
+    } on ApiException catch (e) {
+      return ServiceResponse.error(
+        e.message.isNotEmpty ? e.message : 'No se pudo crear la salida.',
+        statusCode: e.statusCode,
+      );
+    } on SocketException {
+      return ServiceResponse.error('Sin conexión con el servidor.');
+    } on FormatException {
+      return ServiceResponse.error('No se pudo interpretar la respuesta del servidor.');
+    } catch (e) {
+      DebugLog.error('createOut $e');
+      return ServiceResponse.error('Error inesperado al crear la salida.');
     }
   }
 }

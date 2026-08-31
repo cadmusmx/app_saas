@@ -10,50 +10,46 @@ import 'package:gaso_tenant_app/core/tenant/tenant.dart';
 /// Usuario autenticado. `admin` se conserva por fidelidad al contrato pero **NO** participa en el RBAC del menú/guards (decisión cerrada).
 class AppUser {
   final int? id;
+  final String user;
   final String name;
   final String email;
-  final bool admin;
+  final String? phone;
   final int? area;
-  final int? cityBase;
+  final String? areaName;
   final int? department;
+  final String? departmentName;
   final int? position;
+  final String? positionName;
   final int? region;
-  final int? company;
 
   const AppUser({
     required this.id,
+    required this.user,
     required this.name,
     required this.email,
-    required this.admin,
+    this.phone,
     this.area,
-    this.cityBase,
+    this.areaName,
     this.department,
+    this.departmentName,
     this.position,
+    this.positionName,
     this.region,
-    this.company,
   });
 
   factory AppUser.fromMe(Map<String, dynamic> j) => AppUser(
     id: _asInt(j['id']),
+    user: (j['user'] as String?) ?? '',
     name: (j['name'] as String?) ?? '',
     email: (j['email'] as String?) ?? '',
-    admin: _asBool(j['admin']),
     area: _asInt(j['area']),
-    cityBase: _asInt(j['cityBase']),
+    areaName: j['areaName'],
     department: _asInt(j['department']),
+    departmentName: j['departmentName'],
     position: _asInt(j['position']),
+    positionName: j['positionName'],
     region: _asInt(j['region']),
-    company: _asInt(j['company']),
   );
-}
-
-/// "Rol" del usuario dentro del tenant (singular).
-class Profile {
-  final int? id;
-  final String name;
-  const Profile({required this.id, required this.name});
-
-  factory Profile.fromMe(Map<String, dynamic> j) => Profile(id: _asInt(j['id']), name: (j['name'] as String?) ?? '');
 }
 
 /// Acceso a una vista: máscara CRUD (ya saneada) + metadatos de menú.
@@ -86,7 +82,6 @@ class Branding {
 class SessionUser {
   final AppUser user;
   final Tenant tenant;
-  final Profile profile;
   final Map<String, ViewAccess> views;
   final Map<String, bool> menuGroups; // settings del tenant
   final List<String> planMenuGroups; // límite del plan
@@ -95,7 +90,6 @@ class SessionUser {
   const SessionUser({
     required this.user,
     required this.tenant,
-    required this.profile,
     required this.views,
     required this.menuGroups,
     required this.planMenuGroups,
@@ -111,7 +105,6 @@ class SessionUser {
     return SessionUser(
       user: AppUser.fromMe(((json['user'] as Map?) ?? const {}).cast<String, dynamic>()),
       tenant: _tenantFromMe(((json['tenant'] as Map?) ?? const {}).cast<String, dynamic>()),
-      profile: Profile.fromMe(((json['profile'] as Map?) ?? const {}).cast<String, dynamic>()),
       views: _viewsFromMe(json['views']),
       menuGroups: _boolMap(json['menuGroups']),
       planMenuGroups: _stringList(json['planMenuGroups']),

@@ -4,7 +4,7 @@ class Config {
   Config._();
 
   /// Entorno lógico de la app: dev | qa | prod.
-  static const AppEnv appEnv = AppEnv.qa;
+  static const AppEnv appEnv = AppEnv.dev;
 
   /// URL base de la API, En producción se genera en base al slug-tenant del usuario en sesión
   static const String apiUrl = 'http://10.0.2.2:3000/api/';

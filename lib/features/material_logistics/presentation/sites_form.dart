@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:gaso_tenant_app/core/helpers/input_formatters_helper.dart';
 import 'package:gaso_tenant_app/features/material_logistics/data/logistics_catalogs_service.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -9,7 +10,6 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:gaso_tenant_app/app/widgets/appbar_header.dart';
 import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:gaso_tenant_app/core/forms/controllers_manager.dart';
-import 'package:gaso_tenant_app/core/forms/fields_control.dart';
 import 'package:gaso_tenant_app/core/validators/form_validators.dart';
 import 'package:gaso_tenant_app/core/helpers/responsive_helper.dart';
 import 'package:gaso_tenant_app/core/helpers/formatters_helper.dart';

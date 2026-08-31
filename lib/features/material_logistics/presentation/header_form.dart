@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gaso_tenant_app/core/helpers/input_formatters_helper.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:gaso_tenant_app/app/router/routes.dart';
@@ -9,7 +10,6 @@ import 'package:gaso_tenant_app/core/auth/auth_context.dart';
 import 'package:gaso_tenant_app/core/widgets/info/info_letter.dart';
 import 'package:gaso_tenant_app/core/widgets/lists/labels.dart';
 import 'package:gaso_tenant_app/core/forms/controllers_manager.dart';
-import 'package:gaso_tenant_app/core/forms/fields_control.dart';
 import 'package:gaso_tenant_app/core/forms/draft_manager.dart';
 import 'package:gaso_tenant_app/core/validators/form_validators.dart';
 import 'package:gaso_tenant_app/core/widgets/forms/form_fields.dart';

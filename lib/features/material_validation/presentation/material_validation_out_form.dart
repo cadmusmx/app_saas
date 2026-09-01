@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:gaso_tenant_app/core/widgets/lists/tiles.dart';
 import 'package:signature/signature.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:gaso_tenant_app/app/router/routes.dart';
@@ -375,7 +376,28 @@ class _MaterialValidationOutFormState extends State<MaterialValidationOutForm> {
                     _captureFields(),
                     SectionTitle('Fotografías de transporte'),
                     PhotosGrid(context, _photoFields, watermark: _watermark),
-                    _documentsSection(),
+                    ExpansionListTile(
+                      'Documentos',
+                      '(Opcional) evidencias o archivos de la salida.',
+                      _addDocumento,
+                      children: [
+                        for (int i = 0; i < _newDocs.length; i++)
+                          ListTile(
+                            dense: true,
+                            leading: const Icon(Icons.attach_file, size: 20),
+                            title: Text('${_newDocs[i]['name']}', overflow: TextOverflow.ellipsis),
+                            subtitle: Text(
+                              (_newDocs[i]['localPath'] as String? ?? '').split('/').last,
+                              style: const TextStyle(fontSize: 11),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete, size: 20),
+                              onPressed: () => setState(() => _newDocs.removeAt(i)),
+                            ),
+                          ),
+                      ],
+                    ),
                     _isSubmitting
                         ? const Center(child: CircularProgressIndicator())
                         : Row(
@@ -565,45 +587,6 @@ class _MaterialValidationOutFormState extends State<MaterialValidationOutForm> {
           maxLines: 5,
           inputFormatters: [LengthLimitingTextInputFormatter(300), FilteringTextInputFormatter.deny(notUsedExp)],
         ),
-      ],
-    );
-  }
-
-  Widget _documentsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            SectionTitle('Documentos adicionales'),
-            TextButton.icon(
-              onPressed: _addDocumento,
-              icon: const Icon(Icons.add, size: 16),
-              label: const Text('Agregar'),
-            ),
-          ],
-        ),
-        if (_newDocs.isEmpty)
-          const Padding(
-            padding: EdgeInsets.only(left: 4, bottom: 8),
-            child: Text('Opcional. Se añaden sobre los documentos de la entrada.', style: TextStyle(fontSize: 12)),
-          ),
-        for (int i = 0; i < _newDocs.length; i++)
-          ListTile(
-            dense: true,
-            leading: const Icon(Icons.attach_file, size: 20),
-            title: Text('${_newDocs[i]['name']}', overflow: TextOverflow.ellipsis),
-            subtitle: Text(
-              (_newDocs[i]['localPath'] as String? ?? '').split('/').last,
-              style: const TextStyle(fontSize: 11),
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete, size: 20),
-              onPressed: () => setState(() => _newDocs.removeAt(i)),
-            ),
-          ),
       ],
     );
   }

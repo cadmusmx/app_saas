@@ -9,12 +9,24 @@ import 'package:gaso_tenant_app/features/material_validation/domain/verify_folio
 /// Flujo compartido "Dar salida" (R1/R2/R3/R4): centraliza el candado
 /// `verify-folio` → ramificación por `reason` → apertura del form de salida,
 /// para que la acción del AppBar, la del item y la del detalle sean idénticas.
+///
+/// Los avisos van por `MessengerService` (overlay global, no rutas): así no se
+/// apilan modales sobre el bottom sheet que se está cerrando, lo que disparaba
+/// `InheritedElement.debugDeactivated() → assert(_dependents.isEmpty)`.
 class MaterialValidationOutFlow {
   const MaterialValidationOutFlow._();
 
-  /// Quita el prefijo del deep link cuando el valor viene de un escaneo.
-  static String normalizeFolio(String raw) =>
-      raw.replaceFirst(RegExp(r'^gasosaas://mv/', caseSensitive: false), '').trim();
+  /// Evita re-entradas (doble-tap) sin necesidad de un loader modal.
+  static bool _busy = false;
+
+  // Normaliza el folio IN. Acepta cualquier origen:
+  // deeplink escaneado (gasosaas://mv/VME-…), folio escaneado como texto, o tecleado (con/sin VME-).
+  static String normalizeFolio(String raw) {
+    final str = raw.trim();
+    final txt = str.substring(str.lastIndexOf('/') + 1, str.length);
+
+    return txt.startsWith('VME') ? txt : 'VME-$txt';
+  }
 
   /// R1/R2 — modal "Escanea o ingresa el folio de entrada".
   static Future<void> openGiveExitModal(BuildContext context) async {
@@ -38,6 +50,7 @@ class MaterialValidationOutFlow {
               autofocus: true,
               textInputAction: TextInputAction.done,
               textCapitalization: TextCapitalization.characters,
+              maxLength: 30,
               decoration: const InputDecoration(
                 labelText: 'Folio de entrada',
                 border: OutlineInputBorder(),
@@ -73,7 +86,7 @@ class MaterialValidationOutFlow {
         ),
       ),
     );
-    controller.dispose();
+
     if (folio == null || folio.isEmpty) return;
     if (!context.mounted) return;
     await runVerifyAndOpenOut(context, folio);
@@ -82,73 +95,56 @@ class MaterialValidationOutFlow {
   /// R2/R3/R4 — candado + ramificación. `inHand` evita un GET extra cuando el
   /// registro IN ya está en mano (item/detalle); si es null se carga por folio.
   static Future<void> runVerifyAndOpenOut(BuildContext context, String folio, {MaterialValidation? inHand}) async {
+    if (_busy) return;
+    _busy = true;
+    // Capturamos el navigator ANTES del primer await: nunca usamos `context`
+    // tras un await, por lo que no hay riesgo de use_build_context_synchronously.
     final nav = Navigator.of(context);
-    final rootNav = Navigator.of(context, rootNavigator: true);
     final service = MaterialValidationService();
-    _showLoader(context);
     try {
       final verify = await service.verifyFolioForOut(folio);
       if (!verify.success || verify.data == null) {
-        rootNav.pop();
         MessengerService.error(verify.message);
         return;
       }
       final result = verify.data!;
 
-      if (result.reason == VerifyReason.valid) {
-        MaterialValidation? materialIn = inHand;
-        if (materialIn == null) {
-          final detail = await service.getByFolio(result.folio);
-          if (!detail.success || detail.data == null) {
-            rootNav.pop();
-            MessengerService.error(detail.message);
-            return;
+      switch (result.reason) {
+        case VerifyReason.valid:
+          MaterialValidation? materialIn = inHand;
+          if (materialIn == null) {
+            final detail = await service.getByFolio(result.folio);
+            if (!detail.success || detail.data == null) {
+              MessengerService.error(detail.message);
+              return;
+            }
+            materialIn = detail.data;
           }
-          materialIn = detail.data;
-        }
-        rootNav.pop();
-        nav.pushNamed(AppRoutes.materialValidationOut, arguments: materialIn);
-        return;
-      }
+          nav.pushNamed(AppRoutes.materialValidationOut, arguments: materialIn);
+          return;
 
-      rootNav.pop();
-      if (result.reason == VerifyReason.alreadyExtended) {
-        if (!context.mounted) return;
-        await _showAlreadyExtended(context, nav, result.folioSalida);
-      } else {
-        MessengerService.info(result.message);
+        case VerifyReason.alreadyExtended:
+          final folioSalida = result.folioSalida;
+          if (folioSalida != null && folioSalida.isNotEmpty) {
+            MessengerService.actionSnackBar(
+              'Esta entrada ya tiene salida.',
+              () => nav.pushNamed(AppRoutes.materialValidationDetail, arguments: folioSalida),
+              'Ver salida',
+            );
+          } else {
+            MessengerService.info('Esta entrada ya tiene salida.');
+          }
+          return;
+
+        case VerifyReason.notFound:
+        case VerifyReason.notIn:
+        case VerifyReason.unknown:
+          MessengerService.info(result.message);
+          return;
       }
     } finally {
       service.dispose();
+      _busy = false;
     }
-  }
-
-  static void _showLoader(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const PopScope(canPop: false, child: Center(child: CircularProgressIndicator())),
-    );
-  }
-
-  static Future<void> _showAlreadyExtended(BuildContext context, NavigatorState nav, String? folioSalida) {
-    return showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Entrada ya extendida'),
-        content: const Text('Esta entrada ya tiene una salida registrada.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar')),
-          if (folioSalida != null && folioSalida.isNotEmpty)
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                nav.pushNamed(AppRoutes.materialValidationDetail, arguments: folioSalida);
-              },
-              child: const Text('Ver salida'),
-            ),
-        ],
-      ),
-    );
   }
 }

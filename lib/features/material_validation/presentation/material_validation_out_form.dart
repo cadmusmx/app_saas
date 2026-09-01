@@ -595,7 +595,7 @@ class _MaterialValidationOutFormState extends State<MaterialValidationOutForm> {
             leading: const Icon(Icons.attach_file, size: 20),
             title: Text('${_newDocs[i]['name']}', overflow: TextOverflow.ellipsis),
             subtitle: Text(
-              '${(_newDocs[i]['localPath'] as String? ?? '').split('/').last}',
+              (_newDocs[i]['localPath'] as String? ?? '').split('/').last,
               style: const TextStyle(fontSize: 11),
               overflow: TextOverflow.ellipsis,
             ),

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:gaso_tenant_app/app/router/routes.dart';
+import 'package:gaso_tenant_app/core/auth/auth_context.dart';
 import 'package:gaso_tenant_app/core/widgets/lists/labels.dart';
 import 'package:gaso_tenant_app/core/widgets/forms/dialogs.dart';
 import 'package:gaso_tenant_app/core/widgets/selection/options.dart';
@@ -15,10 +16,11 @@ import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:gaso_tenant_app/core/helpers/formatters_helper.dart';
 import 'package:gaso_tenant_app/core/list/base_list_screen.dart';
 import 'package:gaso_tenant_app/features/material_validation/data/material_validation_service.dart';
-import 'package:gaso_tenant_app/features/material_validation/domain/material_validation.dart';
-import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_form.dart';
 import 'package:gaso_tenant_app/features/material_validation/data/validation_catalogs_service.dart';
+import 'package:gaso_tenant_app/features/material_validation/domain/material_validation.dart';
 import 'package:gaso_tenant_app/features/material_validation/domain/validation_catalogs.dart';
+import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_form.dart';
+import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_out_flow.dart';
 
 class MaterialValidationList extends StatefulWidget {
   const MaterialValidationList({super.key});
@@ -89,6 +91,12 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
   @override
   List<Widget>? buildAppBarActions() {
     return [
+      if (AuthContext.instance.canWrite('material_validation'))
+        IconButton(
+          tooltip: 'Dar salida',
+          onPressed: () => MaterialValidationOutFlow.openGiveExitModal(context),
+          icon: const Icon(Icons.logout),
+        ),
       IconButton(tooltip: 'Entrada o Salida', onPressed: _switchES, icon: const Icon(Icons.swap_horiz)),
       IconButton(tooltip: 'Filtros', onPressed: _showFilters, icon: const Icon(Icons.filter_list)),
     ];
@@ -244,6 +252,19 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
         trailing: PopupMenuButton<String>(
           onSelected: (value) async {
             switch (value) {
+              case 'give-exit':
+                await MaterialValidationOutFlow.runVerifyAndOpenOut(context, vm.folio, inHand: vm);
+                break;
+              case 'view-exit':
+                if (vm.folioSalida != null) {
+                  Navigator.pushNamed(context, AppRoutes.materialValidationDetail, arguments: vm.folioSalida);
+                }
+                break;
+              case 'view-origin':
+                if (vm.folioOrigen != null) {
+                  Navigator.pushNamed(context, AppRoutes.materialValidationDetail, arguments: vm.folioOrigen);
+                }
+                break;
               case 'details':
                 await _showDetails(vm);
                 break;
@@ -298,6 +319,14 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
             }
           },
           itemBuilder: (context) => [
+            if (vm.es &&
+                vm.folioSalida == null &&
+                !vm.cancelada &&
+                AuthContext.instance.canWrite('material_validation'))
+              const PopupMenuItem(value: 'give-exit', child: Text('Dar salida')),
+            if (vm.es && vm.folioSalida != null) const PopupMenuItem(value: 'view-exit', child: Text('Ver salida')),
+            if (!vm.es && vm.folioOrigen != null)
+              const PopupMenuItem(value: 'view-origin', child: Text('Ver entrada de origen')),
             const PopupMenuItem(value: 'details', child: Text('Detalles')),
             const PopupMenuItem(value: 'sign', child: Text('Firma ASP')),
             const PopupMenuItem(value: 'images', child: Text('Imágenes')),

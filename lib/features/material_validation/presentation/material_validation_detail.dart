@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:gaso_tenant_app/app/router/routes.dart';
 import 'package:gaso_tenant_app/app/widgets/appbar_header.dart';
+import 'package:gaso_tenant_app/core/auth/auth_context.dart';
 import 'package:gaso_tenant_app/core/widgets/lists/labels.dart';
 import 'package:gaso_tenant_app/core/widgets/media/visual_dialogs.dart';
 import 'package:gaso_tenant_app/core/services/messenger_service.dart';
@@ -10,13 +12,14 @@ import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:gaso_tenant_app/core/helpers/formatters_helper.dart';
 import 'package:gaso_tenant_app/features/material_validation/data/material_validation_service.dart';
 import 'package:gaso_tenant_app/features/material_validation/domain/material_validation.dart';
+import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_out_flow.dart';
 
 class MaterialValidationDetail extends StatefulWidget {
   final MaterialValidation? materialValidation;
   final String? folio;
 
   const MaterialValidationDetail({super.key, this.materialValidation, this.folio})
-      : assert(materialValidation != null || folio != null, 'Se requiere material o folio');
+    : assert(materialValidation != null || folio != null, 'Se requiere material o folio');
 
   @override
   State<MaterialValidationDetail> createState() => _MaterialValidationDetailState();
@@ -69,17 +72,17 @@ class _MaterialValidationDetailState extends State<MaterialValidationDetail> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _materialValidation == null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.search_off, size: 48, color: colorScheme.onSurfaceVariant),
-                      const SizedBox(height: 8),
-                      const Text('No se encontró el registro'),
-                    ],
-                  ),
-                )
-              : _buildContent(colorScheme),
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.search_off, size: 48, color: colorScheme.onSurfaceVariant),
+                  const SizedBox(height: 8),
+                  const Text('No se encontró el registro'),
+                ],
+              ),
+            )
+          : _buildContent(colorScheme),
     );
   }
 
@@ -92,6 +95,7 @@ class _MaterialValidationDetailState extends State<MaterialValidationDetail> {
         spacing: 16,
         children: [
           _HeaderCard(vm: vm, isES: _isES, colorScheme: colorScheme),
+          ..._outActions(vm),
           _Section(
             title: _isES ? 'Entrada' : 'Salida',
             children: [
@@ -102,7 +106,6 @@ class _MaterialValidationDetailState extends State<MaterialValidationDetail> {
               LabelValue('Cuenta / Cliente', vm.cuentaCliente),
               LabelValue('Nombre ASP', vm.aspNombre),
               LabelValue('Nombre del contacto', vm.nombreContacto),
-              LabelValue('Carrier', vm.carrier),
               LabelValue('Carrier', vm.idCarrier != 4 ? vm.carrier : vm.otroCarrier),
               LabelValue('Almacén destino', vm.almacenDestino),
               LabelValue('Región', '${vm.idRegion}'),
@@ -114,16 +117,17 @@ class _MaterialValidationDetailState extends State<MaterialValidationDetail> {
             trailing: _ImageButton(
               label: 'Ver fotos',
               icon: Icons.photo_library_outlined,
-              onTap: () => showImagesDialog(context, images: [
-                VisualTitle<String>('Transporte', '${Config.s3Url}${vm.transporteFoto}'),
-                VisualTitle<String>('Placas', '${Config.s3Url}${vm.placasFoto}'),
-                VisualTitle<String>('En transporte', '${Config.s3Url}${vm.materialEnTransporteFoto}'),
-                if (_isES) VisualTitle<String>('Descargado', '${Config.s3Url}${vm.materialDescargadoFoto}'),
-              ]),
+              onTap: () => showImagesDialog(
+                context,
+                images: [
+                  VisualTitle<String>('Transporte', '${Config.s3Url}${vm.transporteFoto}'),
+                  VisualTitle<String>('Placas', '${Config.s3Url}${vm.placasFoto}'),
+                  VisualTitle<String>('En transporte', '${Config.s3Url}${vm.materialEnTransporteFoto}'),
+                  if (_isES) VisualTitle<String>('Descargado', '${Config.s3Url}${vm.materialDescargadoFoto}'),
+                ],
+              ),
             ),
-            children: [
-              LabelValue('Placas', vm.placasTransporte),
-            ],
+            children: [LabelValue('Placas', vm.placasTransporte)],
           ),
           _Section(
             title: 'Registro de piezas',
@@ -131,10 +135,7 @@ class _MaterialValidationDetailState extends State<MaterialValidationDetail> {
                 ? _ImageButton(
                     label: 'Ver tarimas',
                     icon: Icons.view_module_outlined,
-                    onTap: () => showImagesDialog(
-                      context,
-                      images: imagesFromMap(vm.tarimas),
-                    ),
+                    onTap: () => showImagesDialog(context, images: imagesFromMap(vm.tarimas)),
                   )
                 : null,
             children: [
@@ -142,16 +143,8 @@ class _MaterialValidationDetailState extends State<MaterialValidationDetail> {
               if (vm.numTarimas > 0) LabelValue('Tarimas', '${vm.numTarimas}'),
             ],
           ),
-          if (vm.piezasMotivo.isNotEmpty)
-            _PiezasSection(
-              title: 'Piezas por motivo',
-              piezas: vm.piezasMotivo,
-            ),
-          if (vm.piezasEstadoF.isNotEmpty)
-            _PiezasSection(
-              title: 'Piezas por estado físico',
-              piezas: vm.piezasEstadoF,
-            ),
+          if (vm.piezasMotivo.isNotEmpty) _PiezasSection(title: 'Piezas por motivo', piezas: vm.piezasMotivo),
+          if (vm.piezasEstadoF.isNotEmpty) _PiezasSection(title: 'Piezas por estado físico', piezas: vm.piezasEstadoF),
           if (vm.documentos.isNotEmpty) _DocumentosSection(documentos: vm.documentos, context: context),
           _Section(
             title: 'Firma ASP',
@@ -162,11 +155,7 @@ class _MaterialValidationDetailState extends State<MaterialValidationDetail> {
             ),
             children: const [],
           ),
-          _FirmaSection(
-            aspFirma: vm.aspFirma,
-            aspNombre: vm.aspNombre,
-            context: context,
-          ),
+          _FirmaSection(aspFirma: vm.aspFirma, aspNombre: vm.aspNombre, context: context),
           _Section(
             title: 'QR del folio',
             trailing: _ImageButton(
@@ -193,6 +182,40 @@ class _MaterialValidationDetailState extends State<MaterialValidationDetail> {
         ],
       ),
     );
+  }
+
+  /// Acción contextual IN→OUT (R4): "Dar salida" (bit W) para una entrada sin
+  /// salida, "Ver salida" si ya la tiene, o "Ver entrada de origen" si es una
+  /// salida derivada. Lista vacía si no aplica (no ocupa espacio en el layout).
+  List<Widget> _outActions(MaterialValidation vm) {
+    if (vm.es && vm.folioSalida == null && !vm.cancelada && AuthContext.instance.canWrite('material_validation')) {
+      return [
+        _ActionCard(
+          icon: Icons.logout,
+          label: 'Dar salida',
+          onTap: () => MaterialValidationOutFlow.runVerifyAndOpenOut(context, vm.folio, inHand: vm),
+        ),
+      ];
+    }
+    if (vm.es && vm.folioSalida != null) {
+      return [
+        _ActionCard(
+          icon: Icons.open_in_new,
+          label: 'Ver salida',
+          onTap: () => Navigator.pushNamed(context, AppRoutes.materialValidationDetail, arguments: vm.folioSalida),
+        ),
+      ];
+    }
+    if (!vm.es && vm.folioOrigen != null) {
+      return [
+        _ActionCard(
+          icon: Icons.login,
+          label: 'Ver entrada de origen',
+          onTap: () => Navigator.pushNamed(context, AppRoutes.materialValidationDetail, arguments: vm.folioOrigen),
+        ),
+      ];
+    }
+    return const [];
   }
 }
 
@@ -262,13 +285,7 @@ class _Section extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            SectionTitle(title),
-            ?trailing,
-          ],
-        ),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [SectionTitle(title), ?trailing]),
         const SizedBox(height: 4),
         ...children,
       ],
@@ -337,15 +354,9 @@ class _DocumentosSection extends StatelessWidget {
               for (var doc in documentos)
                 ListTile(
                   dense: true,
-                  leading: Icon(
-                    _isPdf(doc['file']) ? Icons.picture_as_pdf : Icons.image,
-                    size: 20,
-                  ),
+                  leading: Icon(_isPdf(doc['file']) ? Icons.picture_as_pdf : Icons.image, size: 20),
                   title: Text('${doc['name'] ?? ''}', overflow: TextOverflow.ellipsis),
-                  subtitle: Text(
-                    _isPdf(doc['file']) ? 'PDF' : 'Imagen',
-                    style: const TextStyle(fontSize: 11),
-                  ),
+                  subtitle: Text(_isPdf(doc['file']) ? 'PDF' : 'Imagen', style: const TextStyle(fontSize: 11)),
                   trailing: const Icon(Icons.open_in_new, size: 18),
                   onTap: () => _openDoc(outerContext, doc),
                 ),
@@ -367,10 +378,7 @@ class _DocumentosSection extends StatelessWidget {
     if (_isPdf(url)) {
       launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } else {
-      showImagesDialog(
-        ctx,
-        images: [VisualTitle<String>(doc['name'] ?? 'Documento', url)],
-      );
+      showImagesDialog(ctx, images: [VisualTitle<String>(doc['name'] ?? 'Documento', url)]);
     }
   }
 }
@@ -380,20 +388,13 @@ class _FirmaSection extends StatelessWidget {
   final String aspNombre;
   final BuildContext context;
 
-  const _FirmaSection({
-    required this.aspFirma,
-    required this.aspNombre,
-    required this.context,
-  });
+  const _FirmaSection({required this.aspFirma, required this.aspNombre, required this.context});
 
   @override
   Widget build(BuildContext outerContext) {
     final Uint8List firmaBytes = base64Decode(aspFirma);
     return GestureDetector(
-      onTap: () => showSignaturesDialog(
-        outerContext,
-        signatures: [VisualTitle<Uint8List>('Firma ASP', firmaBytes)],
-      ),
+      onTap: () => showSignaturesDialog(outerContext, signatures: [VisualTitle<Uint8List>('Firma ASP', firmaBytes)]),
       child: Card(
         margin: EdgeInsets.zero,
         clipBehavior: Clip.antiAlias,
@@ -432,6 +433,27 @@ class _ImageButton extends StatelessWidget {
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         visualDensity: VisualDensity.compact,
+      ),
+    );
+  }
+}
+
+class _ActionCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _ActionCard({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: onTap,
+        icon: Icon(icon),
+        label: Text(label),
+        style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
       ),
     );
   }

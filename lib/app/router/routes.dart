@@ -16,6 +16,7 @@ import 'package:gaso_tenant_app/features/material_validation/domain/material_val
 import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_detail.dart';
 import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_form.dart';
 import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_list.dart';
+import 'package:gaso_tenant_app/features/material_validation/presentation/material_validation_out_form.dart';
 import 'package:gaso_tenant_app/features/material_logistics/domain/material_logistics.dart';
 import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_shell.dart';
 import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_list.dart';
@@ -47,6 +48,7 @@ class AppRoutes {
   static const String materialValidation = '/material-validation';
   static const String materialValidationList = '/material-validation-list';
   static const String materialValidationDetail = '/material-validation-detail';
+  static const String materialValidationOut = '/material-validation-out';
 
   static const String materialLogistics = '/material-logistics';
   static const String materialLogisticsList = '/material-logistics-list';
@@ -127,6 +129,15 @@ final Map<String, WidgetBuilder> appRoutes = {
     return RbacGate(
       viewCode: 'material_validation',
       child: MaterialValidationDetail(folio: folio, materialValidation: material),
+    );
+  },
+  AppRoutes.materialValidationOut: (context) {
+    final args = ModalRoute.of(context)!.settings.arguments;
+    final materialIn = args is MaterialValidation ? args : null;
+    return RbacGate(
+      viewCode: 'material_validation',
+      require: kWriteMask,
+      child: MaterialValidationOutForm(materialIn: materialIn),
     );
   },
   AppRoutes.materialLogistics: (context) {

@@ -525,7 +525,7 @@ class _MaterialValidationOutFormState extends State<MaterialValidationOutForm> {
                   onTap: () {
                     final raw = (doc['file'] as String?) ?? '';
                     if (raw.isEmpty) return;
-                    final url = raw.startsWith('http') ? raw : '${Config.s3Url}$raw';
+                    final url = solvedUrl(raw);
                     if (isPdf(url)) {
                       launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
                     } else {

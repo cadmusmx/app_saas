@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_cached_pdfview/flutter_cached_pdfview.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart' show DefaultCacheManager;
-import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:gaso_tenant_app/core/helpers/formatters_helper.dart';
 
 // Imágenes
@@ -162,7 +161,7 @@ Future<void> _showGenericDialog<T>(
 List<VisualTitle<String>> imagesFromMap(Map<String, dynamic>? photos) {
   if (photos == null) return [];
   return photos.entries
-      .map((photo) => VisualTitle<String>(snakeToTitle(photo.key), '${Config.s3Url}${photo.value}'))
+      .map((photo) => VisualTitle<String>(snakeToTitle(photo.key), solvedUrl(photo.value)))
       .toList();
 }
 

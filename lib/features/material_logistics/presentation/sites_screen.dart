@@ -104,8 +104,10 @@ class _SitesScreenState extends State<SitesScreen> {
               if (responsable.isNotEmpty) Text('Responsable: $responsable'),
               Text('Unidad: ${holder.unidadPlaca}'),
               Text('Operador: ${holder.nombreOperador}'),
-              Text('Horario: ${holder.horaLlegada ?? '—'} · ${holder.horaInicioDescarga ?? '—'} · '
-                  '${holder.horaSalida ?? '—'}'),
+              Text(
+                'Horario: ${holder.horaLlegada ?? '—'} · ${holder.horaInicioDescarga ?? '—'} · '
+                '${holder.horaSalida ?? '—'}',
+              ),
             ],
           ),
         ),
@@ -127,10 +129,7 @@ class _SitesScreenState extends State<SitesScreen> {
               icon: const Icon(Icons.edit),
               onPressed: () => _openSitio(draft: _holder.getSitio(index)!.copy(), index: index),
             ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () => _confirmarBorrar(index),
-            ),
+            IconButton(icon: const Icon(Icons.delete_outline), onPressed: () => _confirmarBorrar(index)),
           ],
         ),
       ),
@@ -148,10 +147,11 @@ class _SitesScreenState extends State<SitesScreen> {
     setState(() => _isSubmitting = true);
     try {
       final idUser = _sessionUser.user.id ?? 0;
+      final tenantSlug = _sessionUser.tenant.slug; // [ADD]
       if (idUser == 0) {
         return MessengerService.error('No se pudo obtener el usuario.');
       }
-      final response = await _holder.submit(idUsuario: idUser);
+      final response = await _holder.submit(idUser, tenantSlug); // [UPD]
       if (!mounted) return;
       if (response.success) {
         if (!_holder.isEdition) {
@@ -182,10 +182,7 @@ class _SitesScreenState extends State<SitesScreen> {
         '${holder.isEdition ? 'Edición de la' : 'Sitios de la'} ${holder.re ? 'recepción' : 'entrega'}',
         leading: holder.isEdition
             ? null
-            : IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: holder.backToCabecera,
-              ),
+            : IconButton(icon: const Icon(Icons.arrow_back), onPressed: holder.backToCabecera),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openSitio(draft: SitioDraft.nuevo()),
@@ -217,9 +214,7 @@ class _SitesScreenState extends State<SitesScreen> {
                     controlAffinity: ListTileControlAffinity.leading,
                     contentPadding: EdgeInsets.zero,
                     isThreeLine: true,
-                    title: Text(
-                      'Confirme la información',
-                    ),
+                    title: Text('Confirme la información'),
                     subtitle: Text(
                       'Los datos y evidencia proporcionada corresponden a la ${holder.re ? 'recepción' : 'entrega'} real del material.',
                     ),

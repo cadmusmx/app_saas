@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:gaso_tenant_app/core/helpers/input_formatters_helper.dart';
-import 'package:gaso_tenant_app/features/material_logistics/data/logistics_catalogs_service.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:gaso_tenant_app/app/widgets/appbar_header.dart';
-import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:gaso_tenant_app/core/forms/controllers_manager.dart';
 import 'package:gaso_tenant_app/core/validators/form_validators.dart';
 import 'package:gaso_tenant_app/core/helpers/responsive_helper.dart';
 import 'package:gaso_tenant_app/core/helpers/formatters_helper.dart';
 import 'package:gaso_tenant_app/core/helpers/regexp_helper.dart';
+import 'package:gaso_tenant_app/core/helpers/input_formatters_helper.dart';
 import 'package:gaso_tenant_app/core/widgets/forms/form_fields.dart';
 import 'package:gaso_tenant_app/core/widgets/lists/labels.dart';
 import 'package:gaso_tenant_app/core/widgets/media/photo_picker.dart';
@@ -23,6 +21,7 @@ import 'package:gaso_tenant_app/core/services/location_service.dart';
 import 'package:gaso_tenant_app/core/services/messenger_service.dart';
 import 'package:gaso_tenant_app/core/selection/option_sl.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
+import 'package:gaso_tenant_app/features/material_logistics/data/logistics_catalogs_service.dart';
 import 'package:gaso_tenant_app/features/material_logistics/domain/logistics_catalogs.dart';
 import 'package:gaso_tenant_app/features/material_logistics/domain/sitio_draft.dart';
 import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_holder.dart';
@@ -287,7 +286,7 @@ class _SitesFormState extends State<SitesForm> {
     }
     if (key.isEmpty) MessengerService.info('Archivo no encontrado.');
     try {
-      final uri = Uri.parse('${Config.s3Url}$key');
+      final uri = Uri.parse(solvedUrl(key));
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
         MessengerService.info('No se pudo abrir el archivo $key');
       }

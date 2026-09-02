@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:gaso_tenant_app/app/router/routes.dart';
 import 'package:gaso_tenant_app/core/auth/auth_context.dart';
-import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
 import 'package:gaso_tenant_app/core/list/base_list_screen.dart';
 import 'package:gaso_tenant_app/core/selection/selection_list.dart';
@@ -253,7 +252,7 @@ class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, 
 
   Future<void> _verDocumento(String archivo) async {
     try {
-      final uri = Uri.parse('${Config.s3Url}$archivo');
+      final uri = Uri.parse(solvedUrl(archivo));
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
         MessengerService.info('No se pudo abrir el archivo $archivo');
       }

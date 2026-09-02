@@ -1,3 +1,4 @@
+import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
@@ -110,4 +111,18 @@ List<String> getLinks(String body) {
 /// Limpia puntuación final que la regex suele "comerse" (https://x.com.)
 String cleanUrl(String url) {
   return url.replaceAll(RegExp(r'[.,;:!?)\]}>]+$'), '');
+}
+
+String solvedUrl(String? key) {
+  if (key == null || key.isEmpty) return '';
+  if (key.startsWith('http')) return key;
+
+  final String baseURL = Config.s3Url;
+  
+  // Remueve las barras al final de la URL base
+  final cleanBaseURL = baseURL.replaceAll(RegExp(r'/+$'), '');
+  // Remueve las barras al inicio del key
+  final cleanKey = key.replaceAll(RegExp(r'^/+'), '');
+
+  return '$cleanBaseURL/$cleanKey';
 }

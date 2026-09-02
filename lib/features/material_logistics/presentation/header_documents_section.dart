@@ -3,11 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
 import 'package:gaso_tenant_app/core/services/messenger_service.dart';
 import 'package:gaso_tenant_app/core/widgets/forms/form_fields.dart';
 import 'package:gaso_tenant_app/core/widgets/lists/labels.dart';
+import 'package:gaso_tenant_app/core/helpers/formatters_helper.dart';
 import 'package:gaso_tenant_app/features/material_logistics/domain/document_draft.dart';
 import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_holder.dart';
 
@@ -31,7 +31,7 @@ class HeaderDocumentsSection extends StatelessWidget {
     }
     if (d.archivo.isEmpty) return MessengerService.info('Archivo no encontrado.');
     try {
-      final uri = Uri.parse('${Config.s3Url}${d.archivo}');
+      final uri = Uri.parse(solvedUrl(d.archivo));
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
         MessengerService.info('No se pudo abrir el archivo.');
       }

@@ -394,13 +394,16 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
         final success = await _handleNewForm(folio);
         if (!mounted) return;
         if (success) {
+          await _preferences.init(); // garantiza el SharedPreferences cargado
           _preferences.vmES = _es;
-          _qrService.showQRDialog(
-            context,
-            _deepLink(folio),
-            () => Navigator.pushReplacementNamed(context, AppRoutes.home),
-            label: folio,
-          );
+          if (mounted) {
+            _qrService.showQRDialog(
+              context,
+              _deepLink(folio),
+              () => Navigator.pushReplacementNamed(context, AppRoutes.home),
+              label: folio,
+            );
+          }
         }
       }
     } catch (e) {
@@ -934,7 +937,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
       final lp = doc['localPath'];
       if (lp == null || lp.isEmpty) continue;
       // `file` es la llave completa (Qa/…). replaceFirst es robusto por si un
-      // registro legacy guardó la URL completa: en ese caso extrae la llave.
+      // registro legacy guardó la URL completa: en ese caso extrae la llave. (No se borran archivos de Argos ERP legacy)
       final prev = doc['file'];
       final oldKey = (prev != null && prev.isNotEmpty) ? prev.replaceFirst(Config.s3Url, '') : null;
       try {

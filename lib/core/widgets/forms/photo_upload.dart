@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:gaso_tenant_app/core/widgets/media/photo_picker.dart';
 import 'package:gaso_tenant_app/core/services/image_service.dart';
-import 'package:gaso_tenant_app/core/config/config.dart';
+import 'package:gaso_tenant_app/core/helpers/formatters_helper.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
 
 // Clase base abstracta para el manejo de fotos
@@ -27,7 +27,7 @@ class FileUrlPhotoData implements PhotoData {
   Widget buildImageWidget() {
     if (url.isNotEmpty) {
       return Image.network(
-        '${Config.s3Url}$url',
+        solvedUrl(url),
         fit: BoxFit.cover,
         errorBuilder: (_, _, _) => const Center(child: Icon(Icons.broken_image, size: 36)),
         loadingBuilder: (context, child, progress) {

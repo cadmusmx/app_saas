@@ -2,9 +2,11 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:gaso_tenant_app/core/http/service_response.dart';
+import 'package:gaso_tenant_app/core/services/qr_service.dart';
 import 'package:gaso_tenant_app/core/services/s3_service.dart';
 import 'package:gaso_tenant_app/core/tenant/tenant_context.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
+import 'package:gaso_tenant_app/core/helpers/generators_helper.dart';
 import 'package:gaso_tenant_app/features/material_logistics/data/material_logistics_service.dart';
 import 'package:gaso_tenant_app/features/material_logistics/domain/material_logistics.dart';
 import 'package:gaso_tenant_app/features/material_logistics/domain/sitio_draft.dart';
@@ -30,6 +32,7 @@ const String _feature = 'material_logistics';
 class MaterialLogisticsHolder extends ChangeNotifier {
   final MaterialLogisticsService _service = MaterialLogisticsService();
   final S3Service _s3 = S3Service();
+  final QrService _qrService = QrService();
 
   @override
   void dispose() {
@@ -54,6 +57,8 @@ class MaterialLogisticsHolder extends ChangeNotifier {
 
   /// Folio del registro en edición (para `PUT /{folio}`). '' en creación.
   String get folio => _original?.folio ?? '';
+
+  String _deepLink(String f) => 'gasosaas://ml/$f';
 
   // Vista
   LogisticsView _view;
@@ -268,7 +273,7 @@ class MaterialLogisticsHolder extends ChangeNotifier {
 
   /// Cabecera + `sitios:[...]` + `documentos:[...]` (opcional). **Sin** `idUsuario`.
   /// `re`/`confirmado` van en creación.
-  Map<String, dynamic> buildCreatePayload() {
+  Map<String, dynamic> buildCreatePayload(String folio, String qrPath) {
     final payload = <String, dynamic>{
       'fecha': _fecha != null ? _fmtDate(_fecha!) : null,
       'idXdock': _toInt(_idXdock),
@@ -283,6 +288,8 @@ class MaterialLogisticsHolder extends ChangeNotifier {
       'idCarrier': _toInt(_idCarrier),
       'otroCarrier': _carrierEsOtro ? (_otroCarrier.isEmpty ? null : _otroCarrier) : null,
       'sitios': _sitios.map((s) => s.toCreateJson()).toList(),
+      'folio': folio,
+      'qr': qrPath,
     };
     if (_documentos.isNotEmpty) {
       payload['documentos'] = _documentos.map((d) => d.toJson()).toList();
@@ -487,8 +494,8 @@ class MaterialLogisticsHolder extends ChangeNotifier {
   /// Sube archivos pendientes y envía (create o update).
   /// `idUsuario` de sesión (solo para la ruta de la llave S3; no viaja en el payload).
   /// La pantalla muestra `response.message`; `data` = folio (create) o el folio en edición.
-  Future<ServiceResponse<String>> submit({required int idUsuario}) async {
-    if (!await _uploadPendingFiles(idUsuario)) {
+  Future<ServiceResponse<String>> submit(int idUser, String tenantSlug) async {
+    if (!await _uploadPendingFiles(idUser)) {
       return ServiceResponse.error('Error al subir uno o más archivos.');
     }
     final tipo = _re ? 'Recepción' : 'Entrega';
@@ -501,7 +508,17 @@ class MaterialLogisticsHolder extends ChangeNotifier {
       if (!res.success) return ServiceResponse.error(res.message, statusCode: res.statusCode);
       return ServiceResponse(true, data: folio, message: '$tipo actualizada con éxito.', statusCode: res.statusCode);
     }
-    final res = await _service.createRecord(buildCreatePayload());
+
+    final newFolio = getFolio(idUser, 'LM${_re ? 'R' : 'E'}-$_idXdock');
+    // subir el QR del folio a S3
+    final String deepLink = _deepLink(folio);
+    final Uint8List qrBytes = await _qrService.generateQrBytes(deepLink);
+    final String qrPath = '${Config.s3Folder}/$tenantSlug/material_logistics/$idUser/$folio.png';
+    final String? url = await _s3.uploadU8LToS3(qrBytes, qrPath, 'image/png');
+    if (url == null) ServiceResponse.error('Ocurrió un error al subir el QR a S3.');
+
+    final res = await _service.createRecord(buildCreatePayload(newFolio, qrPath));
+
     if (!res.success) return res;
     return ServiceResponse(true, data: res.data, message: '$tipo creada con éxito.', statusCode: res.statusCode);
   }

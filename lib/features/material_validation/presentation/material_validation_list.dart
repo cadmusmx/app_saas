@@ -12,7 +12,6 @@ import 'package:gaso_tenant_app/core/selection/selection_list.dart';
 import 'package:gaso_tenant_app/core/services/messenger_service.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
 import 'package:gaso_tenant_app/core/storage/preferences.dart';
-import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:gaso_tenant_app/core/helpers/formatters_helper.dart';
 import 'package:gaso_tenant_app/core/list/base_list_screen.dart';
 import 'package:gaso_tenant_app/features/material_validation/data/material_validation_service.dart';
@@ -187,7 +186,7 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
                   onTap: () {
                     final raw = doc['file'] as String? ?? '';
                     if (raw.isEmpty) return;
-                    final url = raw.startsWith('http') ? raw : '${Config.s3Url}$raw';
+                    final url = solvedUrl(raw);
                     if (isPdf(url)) {
                       launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
                     } else {
@@ -275,14 +274,13 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
                 );
                 break;
               case 'images':
-                DebugLog.info('${Config.s3Url}${vm.transporteFoto}');
                 await showImagesDialog(
                   context,
                   images: [
-                    VisualTitle<String>('Transporte', '${Config.s3Url}${vm.transporteFoto}'),
-                    VisualTitle<String>('Placas', '${Config.s3Url}${vm.placasFoto}'),
-                    VisualTitle<String>('En transporte', '${Config.s3Url}${vm.materialEnTransporteFoto}'),
-                    if (_es) VisualTitle<String>('Descargado', '${Config.s3Url}${vm.materialDescargadoFoto}'),
+                    VisualTitle<String>('Transporte', solvedUrl(vm.transporteFoto)),
+                    VisualTitle<String>('Placas', solvedUrl(vm.placasFoto)),
+                    VisualTitle<String>('En transporte', solvedUrl(vm.materialEnTransporteFoto)),
+                    if (_es) VisualTitle<String>('Descargado', solvedUrl(vm.materialDescargadoFoto)),
                   ],
                 );
                 break;
@@ -305,7 +303,7 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
               case 'qr':
                 await showImagesDialog(
                   context,
-                  images: [VisualTitle<String>('QR', '${Config.s3Url}${vm.qr}')],
+                  images: [VisualTitle<String>('QR', solvedUrl(vm.qr))],
                   padding: 16,
                   isQR: true,
                 );

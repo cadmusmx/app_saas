@@ -8,7 +8,6 @@ import 'package:gaso_tenant_app/core/auth/auth_context.dart';
 import 'package:gaso_tenant_app/core/widgets/lists/labels.dart';
 import 'package:gaso_tenant_app/core/widgets/media/visual_dialogs.dart';
 import 'package:gaso_tenant_app/core/services/messenger_service.dart';
-import 'package:gaso_tenant_app/core/config/config.dart';
 import 'package:gaso_tenant_app/core/helpers/formatters_helper.dart';
 import 'package:gaso_tenant_app/features/material_validation/data/material_validation_service.dart';
 import 'package:gaso_tenant_app/features/material_validation/domain/material_validation.dart';
@@ -120,10 +119,10 @@ class _MaterialValidationDetailState extends State<MaterialValidationDetail> {
               onTap: () => showImagesDialog(
                 context,
                 images: [
-                  VisualTitle<String>('Transporte', '${Config.s3Url}${vm.transporteFoto}'),
-                  VisualTitle<String>('Placas', '${Config.s3Url}${vm.placasFoto}'),
-                  VisualTitle<String>('En transporte', '${Config.s3Url}${vm.materialEnTransporteFoto}'),
-                  if (_isES) VisualTitle<String>('Descargado', '${Config.s3Url}${vm.materialDescargadoFoto}'),
+                  VisualTitle<String>('Transporte', solvedUrl(vm.transporteFoto)),
+                  VisualTitle<String>('Placas', solvedUrl(vm.placasFoto)),
+                  VisualTitle<String>('En transporte', solvedUrl(vm.materialEnTransporteFoto)),
+                  if (_isES) VisualTitle<String>('Descargado', solvedUrl(vm.materialDescargadoFoto)),
                 ],
               ),
             ),
@@ -163,7 +162,7 @@ class _MaterialValidationDetailState extends State<MaterialValidationDetail> {
               icon: Icons.qr_code,
               onTap: () => showImagesDialog(
                 context,
-                images: [VisualTitle<String>('QR', '${Config.s3Url}${vm.qr}')],
+                images: [VisualTitle<String>('QR', solvedUrl(vm.qr))],
                 isQR: true,
                 padding: 32,
               ),
@@ -374,7 +373,7 @@ class _DocumentosSection extends StatelessWidget {
     if (raw.isEmpty) return;
     // `file` es la llave completa (Qa/…); anteponemos la raíz del bucket.
     // Guard http:// por si algún registro legacy guardó la URL completa.
-    final url = raw.startsWith('http') ? raw : '${Config.s3Url}$raw';
+    final url = solvedUrl(raw);
     if (_isPdf(url)) {
       launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } else {

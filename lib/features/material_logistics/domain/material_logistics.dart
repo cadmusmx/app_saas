@@ -6,6 +6,9 @@ import 'dart:convert';
 /// PascalCase salvo `nDocumentos` (así viaja en el JSON del listado) y `documentos`
 /// (bucket de cabecera, solo en el detalle). `Sitios` legacy pasó a **`sitios`** (minúscula):
 ///   así lo emite el BFF SaaS en ambos endpoints.
+///
+/// Los campos `Qr`/`Extended`/`Closed`/`EsDerivada`/`IdIN`/`FolioIN`/`entregas` solo
+/// llegan en el detalle (`/{folio}`); en `/search` faltan y caen a sus defaults.
 enum EMaterialLogistics {
   Id,
   Folio,
@@ -33,11 +36,19 @@ enum EMaterialLogistics {
   nDocumentos,
   documentos,
   sitios,
+  // Derivados IN→OUT (solo detalle)
+  Qr,
+  Extended, // recepción con >=1 entrega
+  Closed, // recepción sin sitios pendientes
+  EsDerivada, // esta fila es una entrega derivada
+  IdIN, // recepción de origen (si EsDerivada)
+  FolioIN,
+  entregas, // [{ id, folio, fecha }] — entregas de la recepción (1..N)
 }
 
 /// Claves del sitio (camelCase, tal cual el JSON anidado).
 /// El listado (`/search`) trae **solo resumen** (`materialFaltante` + los `n*`);
-/// el detalle (`/{folio}`) trae además los arreglos completos.
+/// el detalle (`/{folio}`) trae además los arreglos completos y `entregado`/`folioEntrega`.
 enum ELogisticsSite {
   id,
   idSitio,
@@ -46,6 +57,9 @@ enum ELogisticsSite {
   materialFaltante,
   descripcionFaltantes,
   descripcionIncidencias,
+  // Estado de entrega (solo en /{folio})
+  entregado,
+  folioEntrega,
   // Resumen (solo en /search)
   nIncidencias,
   nEvidencias,
@@ -56,6 +70,9 @@ enum ELogisticsSite {
   evidencias,
   tarimas,
 }
+
+/// Claves de una entrega derivada dentro de `entregas[]`.
+enum ELogisticsEntrega { id, folio, fecha }
 
 // Coerciones tolerantes (mismo criterio que material_validation):
 //    un `bit` SQL puede llegar como 0/1, y las columnas numéricas como string;
@@ -102,6 +119,7 @@ List<dynamic> _asList(dynamic value) {
 
 String _key(EMaterialLogistics e) => e.name;
 String _keyS(ELogisticsSite e) => e.name;
+String _keyE(ELogisticsEntrega e) => e.name;
 
 /// Cabecera de Logística de Material — un arribo de XDOCK repartido en N sitios.
 /// Recepción (`re == true`) / Entrega (`re == false`).
@@ -128,10 +146,19 @@ class MaterialLogistics {
   final String carrier;
   final bool esOtro; // el carrier elegido es "Otro" (dato del catálogo, no id fijo)
   final String? otroCarrier;
-  final int? vinculado; // Id del vínculo a Validación de Material, o null
+  final int? vinculado; // Id del vínculo a Inventario (preexistente); NO confundir con Extended
   final int nDocumentos; // conteo de documentos de cabecera (en /search)
   final List<dynamic> documentos; // bucket de cabecera completo (solo en /{folio})
   final List<LogisticsSite> sitios;
+
+  // Derivados IN→OUT (solo detalle; en /search caen a default)
+  final String qr; // key S3 del QR del registro
+  final bool extended; // recepción con >=1 entrega
+  final bool closed; // recepción sin sitios pendientes
+  final bool esDerivada; // esta fila es una entrega derivada
+  final int? idIN; // recepción de origen (si esDerivada)
+  final String? folioIN;
+  final List<LogisticsEntrega> entregas; // entregas de la recepción (1..N)
 
   MaterialLogistics({
     required this.id,
@@ -160,12 +187,34 @@ class MaterialLogistics {
     required this.nDocumentos,
     required this.documentos,
     required this.sitios,
+    required this.qr,
+    required this.extended,
+    required this.closed,
+    required this.esDerivada,
+    required this.idIN,
+    required this.folioIN,
+    required this.entregas,
   });
 
   /// True si `userId` es el dueño (creador) del registro. Base del gate de
   /// edición en la lista: se ve todo el tenant (Perm.R), pero solo el dueño
   /// edita (Perm.U). El server lo revalida (404 al no-dueño).
   bool isOwnedBy(int? userId) => idUsuario != null && userId != null && idUsuario == userId;
+
+  // Predicados de acción para el detail (ruteo ortogonal acordado):
+  // "Entregar" y "Ver entregas" NO son excluyentes en el parcial.
+
+  /// Recepción con sitios pendientes → habilita "Entregar" (requiere bit W).
+  bool get canDeliver => re && !closed;
+
+  /// Recepción con >=1 entrega → habilita "Ver entregas" (independiente de `closed`).
+  bool get hasDeliveries => re && extended;
+
+  /// Entrega derivada con recepción de origen → habilita "Ver recepción de origen".
+  bool get hasOrigin => esDerivada && (folioIN != null && folioIN!.isNotEmpty);
+
+  /// Sitios aún no entregados (base de la selección en el form de entrega).
+  List<LogisticsSite> get sitiosPendientes => sitios.where((s) => !s.entregado).toList();
 
   factory MaterialLogistics.fromJson(Map<String, dynamic> json) => MaterialLogistics(
     id: _asInt(json[_key(EMaterialLogistics.Id)]) ?? 0,
@@ -196,18 +245,42 @@ class MaterialLogistics {
     sitios: _asList(
       json[_key(EMaterialLogistics.sitios)],
     ).whereType<Map>().map((e) => LogisticsSite.fromJson(e.cast<String, dynamic>())).toList(),
+    qr: _str(json[_key(EMaterialLogistics.Qr)]),
+    extended: _asBool(json[_key(EMaterialLogistics.Extended)]),
+    closed: _asBool(json[_key(EMaterialLogistics.Closed)]),
+    esDerivada: _asBool(json[_key(EMaterialLogistics.EsDerivada)]),
+    idIN: _asInt(json[_key(EMaterialLogistics.IdIN)]),
+    folioIN: _strN(json[_key(EMaterialLogistics.FolioIN)]),
+    entregas: _asList(
+      json[_key(EMaterialLogistics.entregas)],
+    ).whereType<Map>().map((e) => LogisticsEntrega.fromJson(e.cast<String, dynamic>())).toList(),
+  );
+}
+
+/// Entrega derivada listada en la recepción (`entregas[]`): navegación a su detalle.
+class LogisticsEntrega {
+  final int id;
+  final String folio;
+  final String fecha;
+
+  LogisticsEntrega({required this.id, required this.folio, required this.fecha});
+
+  factory LogisticsEntrega.fromJson(Map<String, dynamic> json) => LogisticsEntrega(
+    id: _asInt(json[_keyE(ELogisticsEntrega.id)]) ?? 0,
+    folio: _str(json[_keyE(ELogisticsEntrega.folio)]),
+    fecha: _str(json[_keyE(ELogisticsEntrega.fecha)]),
   );
 }
 
 /// Detalle/resumen por sitio. `idSitio`/`nombreSitio` de-normalizados (sin catálogo).
-/// `id` es el `IdLogisticaSitio` (llave de fila) para el emparejamiento del diff;
-/// `idSitio` es dato, no llave.
+/// `id` es el `IdLogisticaSitio` (llave de fila) — **la llave del submit de entrega**
+/// (`sitios: [id, ...]`), NO `idSitio` (que es texto de negocio).
 ///
 /// **Dos shapes según origen:**
 ///  - `/search` (resumen): `materialFaltante` + `nIncidencias`/`nEvidencias`/`nTarimas`;
-///    los arreglos llegan vacíos.
-///  - `/{folio}` (completo): además `descripcion*` y los arreglos
-///    `tiposMaterial`/`incidencias`/`evidencias`/`tarimas`.
+///    los arreglos llegan vacíos, y `entregado`/`folioEntrega` ausentes.
+///  - `/{folio}` (completo): además `descripcion*`, `entregado`/`folioEntrega` y los
+///    arreglos `tiposMaterial`/`incidencias`/`evidencias`/`tarimas`.
 ///
 /// Los getters `count*` sirven ambos casos: usan el `n*` del resumen si vino, y si no, el largo del arreglo (detalle).
 /// Así el listado pinta conteos sin pedir el detalle, y el detalle sigue funcionando con los arreglos.
@@ -219,6 +292,10 @@ class LogisticsSite {
   final bool materialFaltante;
   final String? descripcionFaltantes;
   final String? descripcionIncidencias;
+
+  // Estado de entrega (/{folio}).
+  final bool entregado;
+  final String? folioEntrega;
 
   // Resumen (/search). -1 = ausente (usa el largo del arreglo).
   final int _nIncidencias;
@@ -239,6 +316,8 @@ class LogisticsSite {
     required this.materialFaltante,
     required this.descripcionFaltantes,
     required this.descripcionIncidencias,
+    required this.entregado,
+    required this.folioEntrega,
     required int nIncidencias,
     required int nEvidencias,
     required int nTarimas,
@@ -263,6 +342,8 @@ class LogisticsSite {
     materialFaltante: _asBool(json[_keyS(ELogisticsSite.materialFaltante)]),
     descripcionFaltantes: _strN(json[_keyS(ELogisticsSite.descripcionFaltantes)]),
     descripcionIncidencias: _strN(json[_keyS(ELogisticsSite.descripcionIncidencias)]),
+    entregado: _asBool(json[_keyS(ELogisticsSite.entregado)]),
+    folioEntrega: _strN(json[_keyS(ELogisticsSite.folioEntrega)]),
     nIncidencias: _asInt(json[_keyS(ELogisticsSite.nIncidencias)]) ?? -1,
     nEvidencias: _asInt(json[_keyS(ELogisticsSite.nEvidencias)]) ?? -1,
     nTarimas: _asInt(json[_keyS(ELogisticsSite.nTarimas)]) ?? -1,

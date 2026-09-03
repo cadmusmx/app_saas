@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'dart:convert';
- 
+
 import 'package:gaso_tenant_app/core/http/api_exception.dart';
 import 'package:gaso_tenant_app/core/http/http_service.dart';
 import 'package:gaso_tenant_app/core/http/service_response.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
 import 'package:gaso_tenant_app/features/material_logistics/domain/material_logistics.dart';
+import 'package:gaso_tenant_app/features/material_logistics/domain/verify_folio_result.dart';
 
 /// Capa de datos de Logística de Material contra el BFF multi-tenant.
 ///
@@ -145,6 +146,74 @@ class MaterialLogisticsService extends HttpService {
     } catch (e) {
       DebugLog.error('updateRecord $e');
       return ServiceResponse.error('Error inesperado al actualizar el registro.');
+    }
+  }
+
+  /// GET `/verify-folio?folio=<valor>` (bit R). Responde **200 siempre**; el
+  /// veredicto va en `reason` (VALID / ALL_DELIVERED / NOT_FOUND / NOT_IN), no en
+  /// el status. Acepta folio tecleado, texto escaneado o el deeplink completo (el
+  /// server hace strip del esquema y normaliza `LMR-`). 400 solo si falta `folio`.
+  Future<ServiceResponse<VerifyFolioResult>> verifyFolioForOut(String folio) async {
+    try {
+      final res = await send('GET', '$_base/verify-folio?folio=${Uri.encodeComponent(folio)}');
+      final body = jsonDecode(res.body);
+      if (body is! Map || body['success'] != true) {
+        return ServiceResponse.error(
+          (body is Map ? body['message']?.toString() : null) ?? 'No se pudo verificar el folio.',
+          statusCode: res.statusCode,
+        );
+      }
+      return ServiceResponse.ok(VerifyFolioResult.fromJson(body.cast<String, dynamic>()), statusCode: res.statusCode);
+    } on ApiException catch (e) {
+      return ServiceResponse.error(
+        e.message.isNotEmpty ? e.message : 'No se pudo verificar el folio.',
+        statusCode: e.statusCode,
+      );
+    } on SocketException {
+      return ServiceResponse.error('Sin conexión con el servidor.');
+    } on FormatException {
+      return ServiceResponse.error('No se pudo interpretar la respuesta del servidor.');
+    } catch (e) {
+      DebugLog.error('verifyFolioForOut $e');
+      return ServiceResponse.error('Error al verificar el folio.');
+    }
+  }
+
+  /// POST `/out?directQR=true` (bit W) — crea la entrega (OutDerived). Modo directo:
+  /// el body ya trae `folioOut` + `qr` (key S3) que la app generó. **Sin** `idUsuario`
+  /// ni `RE` (el server pone creador del token, `RE=0`, y copia `IdXdock/IdCarrier/
+  /// OtroCarrier` del IN). Respuesta **201** `{ success, idOut, folioOut }` (2xx = éxito;
+  /// no asumir 200). Devuelve el `folioOut`.
+  ///
+  /// Errores como `ApiException`: 400 (requeridos / `directQR` sin folioOut+qr / sitios
+  /// vacío / prefijo) · 404 (folio IN no válido) · **409** (un sitio ya fue entregado /
+  /// no pertenece — `UNIQUE(IdSitio)`; el flujo lo trata como recuperable: refrescar
+  /// pendientes y reintentar) · 403 (sin W). El mensaje del server se propaga tal cual.
+  Future<ServiceResponse<String>> createOut(Map<String, dynamic> payload) async {
+    try {
+      final res = await send('POST', '$_base/out?directQR=true', body: payload);
+      final body = jsonDecode(res.body);
+      final ok = body is Map && body['success'] == true;
+      final folioOut = body is Map ? body['folioOut']?.toString() : null;
+      if (!ok || folioOut == null || folioOut.isEmpty) {
+        return ServiceResponse.error(
+          (body is Map ? body['message']?.toString() : null) ?? 'No se pudo crear la entrega.',
+          statusCode: res.statusCode,
+        );
+      }
+      return ServiceResponse.ok(folioOut, statusCode: res.statusCode);
+    } on ApiException catch (e) {
+      return ServiceResponse.error(
+        e.message.isNotEmpty ? e.message : 'No se pudo crear la entrega.',
+        statusCode: e.statusCode,
+      );
+    } on SocketException {
+      return ServiceResponse.error('Sin conexión con el servidor.');
+    } on FormatException {
+      return ServiceResponse.error('No se pudo interpretar la respuesta del servidor.');
+    } catch (e) {
+      DebugLog.error('createOut $e');
+      return ServiceResponse.error('Error inesperado al crear la entrega.');
     }
   }
 }

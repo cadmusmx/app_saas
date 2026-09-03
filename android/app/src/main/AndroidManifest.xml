@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="Gaso Tenant"
+        android:label="Gaso Hub"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -19,13 +19,14 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- Deep links: gasosaas://tenant/<slug> y gasosaas://mv/<folio> -->
+            <!-- Deep links: gasosaas://tenant/<slug>, etc -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="gasosaas" android:host="tenant"/>
                 <data android:scheme="gasosaas" android:host="mv"/>
+                <data android:scheme="gasosaas" android:host="ml"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

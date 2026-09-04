@@ -7,7 +7,7 @@ class Config {
   static const AppEnv appEnv = AppEnv.dev;
 
   /// URL base de la API, En producción se genera en base al slug-tenant del usuario en sesión
-  static const String apiUrl = 'http://10.0.2.2:3000/api/';
+  static const String apiUrl = 'http://192.168.0.14:3000/api/';
 
   /// Carpeta S3 por entorno (`Qa`/`Pr`).
   /// Se hornea en la llave completa que guarda la app; `S3Service._resolveKey` la respeta de forma idempotente al escribir.

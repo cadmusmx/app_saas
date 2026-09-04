@@ -20,6 +20,7 @@ import 'package:gaso_tenant_app/features/material_validation/presentation/materi
 import 'package:gaso_tenant_app/features/material_logistics/domain/material_logistics.dart';
 import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_shell.dart';
 import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_list.dart';
+import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_detail.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -52,6 +53,7 @@ class AppRoutes {
 
   static const String materialLogistics = '/material-logistics';
   static const String materialLogisticsList = '/material-logistics-list';
+  static const String materialLogisticsDetail = '/material-logistics-detail';
 
   static const String operationExpenses = '/operation-expenses';
   static const String operationExpensesList = '/operation-expenses-list';
@@ -151,6 +153,15 @@ final Map<String, WidgetBuilder> appRoutes = {
   },
   AppRoutes.materialLogisticsList: (_) {
     return const RbacGate(viewCode: 'material_logistics', child: MaterialLogisticsList());
+  },
+  AppRoutes.materialLogisticsDetail: (context) {
+    final args = ModalRoute.of(context)!.settings.arguments;
+    final folio = args is String ? args : null;
+    final record = args is MaterialLogistics ? args : null;
+    return RbacGate(
+      viewCode: 'material_logistics',
+      child: MaterialLogisticsDetail(folio: folio, record: record),
+    );
   },
   AppRoutes.operationExpenses: (_) {
     return const RbacGate(viewCode: 'requests_expenses', require: kWriteMask, child: EnProceso());

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gaso_tenant_app/app/router/routes.dart';
 import 'package:gaso_tenant_app/core/services/messenger_service.dart';
-import 'package:gaso_tenant_app/core/widgets/media/qr_scan_screen.dart';
+import 'package:gaso_tenant_app/core/widgets/media/folio_entry_sheet.dart';
 import 'package:gaso_tenant_app/features/material_validation/data/material_validation_service.dart';
 import 'package:gaso_tenant_app/features/material_validation/domain/material_validation.dart';
 import 'package:gaso_tenant_app/features/material_validation/domain/verify_folio_result.dart';
@@ -29,67 +29,17 @@ class MaterialValidationOutFlow {
   }
 
   /// R1/R2 — modal "Escanea o ingresa el folio de entrada".
-  static Future<void> openGiveExitModal(BuildContext context) async {
-    final controller = TextEditingController();
-    final folio = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(left: 16, right: 16, top: 8, bottom: MediaQuery.of(ctx).viewInsets.bottom + 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Dar salida', style: Theme.of(ctx).textTheme.titleLarge),
-            const SizedBox(height: 4),
-            const Text('Escanea o ingresa el folio de entrada.'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              autofocus: true,
-              textInputAction: TextInputAction.done,
-              textCapitalization: TextCapitalization.characters,
-              maxLength: 30,
-              decoration: const InputDecoration(
-                labelText: 'Folio de entrada',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.tag),
-              ),
-              onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.qr_code_scanner),
-                    label: const Text('Escanear'),
-                    onPressed: () async {
-                      final raw = await Navigator.of(
-                        ctx,
-                      ).push<String>(MaterialPageRoute(builder: (_) => const QrScanScreen(title: 'Escanear entrada')));
-                      if (raw != null && raw.isNotEmpty) controller.text = normalizeFolio(raw);
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-                    child: const Text('Continuar'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+   static Future<void> openGiveExitModal(BuildContext context) async {
+    final raw = await showFolioEntrySheet(
+      context,
+      title: 'Dar salida',
+      subtitle: 'Escanea o ingresa el folio de entrada.',
+      inputLabel: 'Folio de entrada',
+      scanTitle: 'Escanear entrada',
     );
-
-    if (folio == null || folio.isEmpty) return;
+    if (raw == null || raw.isEmpty) return;
     if (!context.mounted) return;
-    await runVerifyAndOpenOut(context, folio);
+    await runVerifyAndOpenOut(context, normalizeFolio(raw));
   }
 
   /// R2/R3/R4 — candado + ramificación. `inHand` evita un GET extra cuando el

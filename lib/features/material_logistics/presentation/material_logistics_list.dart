@@ -16,7 +16,7 @@ import 'package:gaso_tenant_app/features/material_logistics/data/material_logist
 import 'package:gaso_tenant_app/features/material_logistics/data/logistics_catalogs_service.dart';
 import 'package:gaso_tenant_app/features/material_logistics/domain/material_logistics.dart';
 import 'package:gaso_tenant_app/features/material_logistics/domain/logistics_catalogs.dart';
-import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_scan.dart';
+import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_out_flow.dart';
 
 class MaterialLogisticsList extends StatefulWidget {
   const MaterialLogisticsList({super.key});
@@ -83,9 +83,9 @@ class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, 
   List<Widget>? buildAppBarActions() {
     return [
       IconButton(
-        tooltip: 'Escanear QR',
-        onPressed: () => MaterialLogisticsScan.scanToDetail(context),
-        icon: const Icon(Icons.qr_code_scanner),
+        tooltip: 'Entregar (folio)',
+        onPressed: () => MaterialLogisticsOutFlow.openGiveExitModal(context),
+        icon: const Icon(Icons.local_shipping),
       ),
       IconButton(tooltip: 'Recepción o Entrega', onPressed: _switchRE, icon: const Icon(Icons.swap_horiz)),
       IconButton(tooltip: 'Filtros', onPressed: _showFilters, icon: const Icon(Icons.filter_list)),
@@ -312,9 +312,13 @@ class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, 
               case 'edit':
                 await _openEdit(item);
                 break;
+              case 'give-exit':
+                await MaterialLogisticsOutFlow.runVerifyAndOpenOut(context, item.folio);
+                break;
             }
           },
           itemBuilder: (context) => [
+            if (item.re) const PopupMenuItem(value: 'give-exit', child: Text('Entregar')),
             const PopupMenuItem(value: 'details', child: Text('Detalles')),
             if (item.sitios.isNotEmpty) const PopupMenuItem(value: 'sites', child: Text('Sitios')),
             if (item.isOwnedBy(AuthContext.instance.current?.user.id))

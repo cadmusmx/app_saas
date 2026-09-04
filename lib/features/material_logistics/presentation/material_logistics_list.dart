@@ -35,7 +35,7 @@ class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, 
   bool _re = true; // true = Recepciones, false = Entregas
 
   @override
-  String get screenTitle => _re ? 'Recepción de material' : 'Entrega de material';
+  String get screenTitle => _re ? 'Recepciones' : 'Entregas';
 
   @override
   String get emptyMessage => _re ? 'No hay recepciones registradas.' : 'No hay entregas registradas.';

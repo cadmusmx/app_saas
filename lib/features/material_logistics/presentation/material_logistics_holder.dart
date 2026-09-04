@@ -511,9 +511,9 @@ class MaterialLogisticsHolder extends ChangeNotifier {
 
     final newFolio = getFolio(idUser, 'LM${_re ? 'R' : 'E'}-$_idXdock');
     // subir el QR del folio a S3
-    final String deepLink = _deepLink(folio);
+    final String deepLink = _deepLink(newFolio);
     final Uint8List qrBytes = await _qrService.generateQrBytes(deepLink);
-    final String qrPath = '${Config.s3Folder}/$tenantSlug/material_logistics/$idUser/$folio.png';
+    final String qrPath = '${Config.s3Folder}/$tenantSlug/material_logistics/$idUser/$newFolio.png';
     final String? url = await _s3.uploadU8LToS3(qrBytes, qrPath, 'image/png');
     if (url == null) ServiceResponse.error('Ocurrió un error al subir el QR a S3.');
 

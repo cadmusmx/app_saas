@@ -11,6 +11,7 @@ import 'package:gaso_tenant_app/features/auth/data/auth_service.dart';
 /// Hosts soportados:
 ///  - `gasosaas://tenant/{slug}` → LoginScreen con la empresa pre-llenada.
 ///  - `gasosaas://mv/{folio}` → detalle de validación de material (QR del registro).
+///  - `gasosaas://ml/{folio}` → detalle de logística de material (QR del registro).
 ///
 /// El folio viaja sin slug: el registro se resuelve siempre contra el tenant activo.
 /// El BFF acota por `TenantID`, así que un QR de otra empresa devuelve 404 y nunca expone datos ajenos.
@@ -71,12 +72,16 @@ class DeepLinkService with WidgetsBindingObserver {
   /// Lo invoca `LoadScreen` **después** de decidir su destino: en cold-start,
   /// `AuthService` todavía no ha leído el token cuando llega el link, y además
   /// `LoadScreen` termina con un `pushReplacementNamed(home)` que borraría cualquier ruta empujada antes.
-  /// Navegar aquí evita ambas carreras.
+  /// Navegar aquí evita ambas carreras. El módulo se resuelve por el prefijo del folio.
   static void openPending() {
     final folio = _pendingFolio;
     _pendingFolio = null;
     if (folio == null) return;
-    _instance?._openMaterialValidation(folio);
+    if (folio.startsWith('VM')) {
+      _instance?._openMaterialValidation(folio);
+    } else if (folio.startsWith('LM')) {
+      _instance?._openMaterialLogistics(folio);
+    }
   }
 
   void _handle(Uri uri) {
@@ -87,7 +92,10 @@ class DeepLinkService with WidgetsBindingObserver {
         _handleTenant(uri);
         break;
       case 'mv':
-        _handleMaterialValidation(uri);
+        _handleMaterial(uri, _openMaterialValidation);
+        break;
+      case 'ml':
+        _handleMaterial(uri, _openMaterialLogistics);
         break;
       default:
         DebugLog.warning('Deep link no reconocido: $uri');
@@ -110,38 +118,51 @@ class DeepLinkService with WidgetsBindingObserver {
     }
   }
 
-  // validación de material
+  // Material (validación y logística comparten mecánica; difieren en la ruta destino)
 
-  /// `gasosaas://mv/{folio}`
-  void _handleMaterialValidation(Uri uri) {
+  String? getFolioFromUri(Uri uri) {
     final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
-    if (segments.isEmpty) return;
+    if (segments.isEmpty) return null;
     final folio = segments.first;
-    if (folio.isEmpty) return;
+    if (folio.isEmpty) return null;
+    return folio;
+  }
+
+  /// `gasosaas://ml/{folio}` o `gasosaas://mv/{folio}`
+  void _handleMaterial(Uri uri, void Function(String) openFn) {
+    final folio = getFolioFromUri(uri);
+    if (folio == null) return;
 
     // Cold-start: la app sigue arrancando (AuthService aún no leyó el token y LoadScreen no ha decidido destino).
     // Decidir aquí mandaría a login por un falso negativo, y cualquier push sería sustituido por LoadScreen.
     if (!AuthService.instance.loadedAuthState.value) {
-      DebugLog.info('[deeplink] mv pendiente (app arrancando): $folio');
+      DebugLog.info('[deeplink] material pendiente (app arrancando): $folio');
       _pendingFolio = folio;
       return;
     }
 
-    _openMaterialValidation(folio);
+    openFn(folio);
+  }
+
+  bool _authGuard() {
+    final isAuthenticated = AuthService.instance.isAuthenticated && AuthService.instance.isTokenValid;
+    if (!isAuthenticated) {
+      navigatorKey.currentState?.pushReplacementNamed(AppRoutes.login);
+      return false;
+    }
+    return true;
   }
 
   void _openMaterialValidation(String folio) {
-    final isAuthenticated = AuthService.instance.isAuthenticated && AuthService.instance.isTokenValid;
-    DebugLog.info('[deeplink] abrir mv folio=$folio auth=$isAuthenticated nav=${navigatorKey.currentState != null}');
-
-    if (!isAuthenticated) {
-      navigatorKey.currentState?.pushReplacementNamed(AppRoutes.login);
-      return;
-    }
-
     // `RbacGate` de la ruta valida el bit R y la hidratación de sesión.
     // Si el folio no existe en el tenant activo, el detalle muestra el 404 del BFF.
-    navigatorKey.currentState?.pushNamed(AppRoutes.materialValidationDetail, arguments: folio);
+    if (_authGuard()) navigatorKey.currentState?.pushNamed(AppRoutes.materialValidationDetail, arguments: folio);
+  }
+
+  void _openMaterialLogistics(String folio) {
+    // `RbacGate` de la ruta valida el bit R y la hidratación de sesión.
+    // Si el folio no existe en el tenant activo, el detalle muestra el 404 del BFF.
+    if (_authGuard()) navigatorKey.currentState?.pushNamed(AppRoutes.materialLogisticsDetail, arguments: folio);
   }
 
   void _showSwitchDialog(String newSlug, String currentSlug) {

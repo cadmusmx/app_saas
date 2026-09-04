@@ -315,10 +315,21 @@ class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, 
               case 'give-exit':
                 await MaterialLogisticsOutFlow.runVerifyAndOpenOut(context, item.folio);
                 break;
+              case 'view-exit':
+                await Navigator.pushNamed(context, AppRoutes.materialLogisticsDetail, arguments: item.folio);
+                break;
+              case 'view-origin':
+                if (item.folioIN != null) {
+                  await Navigator.pushNamed(context, AppRoutes.materialLogisticsDetail, arguments: item.folioIN);
+                }
+                break;
             }
           },
           itemBuilder: (context) => [
             if (item.re) const PopupMenuItem(value: 'give-exit', child: Text('Entregar')),
+            if (item.re && item.extended) const PopupMenuItem(value: 'view-exit', child: Text('Ver entregas')),
+            if (!item.re && item.folioIN != null)
+              const PopupMenuItem(value: 'view-origin', child: Text('Ver recepción de origen')),
             const PopupMenuItem(value: 'details', child: Text('Detalles')),
             if (item.sitios.isNotEmpty) const PopupMenuItem(value: 'sites', child: Text('Sitios')),
             if (item.isOwnedBy(AuthContext.instance.current?.user.id))

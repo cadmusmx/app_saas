@@ -220,7 +220,7 @@ class _MaterialLogisticsDetailState extends State<MaterialLogisticsDetail> {
         _ActionCard(
           icon: Icons.local_shipping,
           label: 'Entregar',
-          onTap: () => MaterialLogisticsOutFlow.runVerifyAndOpenOut(context, ml.folio, inHand: ml),
+          onTap: () => MaterialLogisticsOutFlow.runVerifyAndOpenOut(context, ml.folio),
         ),
       );
     }

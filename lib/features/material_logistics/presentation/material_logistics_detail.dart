@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:gaso_tenant_app/app/router/routes.dart';
 import 'package:gaso_tenant_app/app/widgets/appbar_header.dart';
+import 'package:gaso_tenant_app/core/auth/auth_context.dart';
 import 'package:gaso_tenant_app/core/helpers/formatters_helper.dart';
 import 'package:gaso_tenant_app/core/services/messenger_service.dart';
 import 'package:gaso_tenant_app/core/widgets/lists/labels.dart';
@@ -9,6 +10,7 @@ import 'package:gaso_tenant_app/core/widgets/media/visual_dialogs.dart';
 import 'package:gaso_tenant_app/features/material_logistics/data/material_logistics_service.dart';
 import 'package:gaso_tenant_app/features/material_logistics/domain/material_logistics.dart';
 import 'package:gaso_tenant_app/features/material_logistics/presentation/logistics_site_readonly.dart';
+import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_out_flow.dart';
 
 /// Detalle read-only de un registro de Logística (recepción o entrega). Punto de
 /// aterrizaje del escaneo (§3.1) y del "Ver entregas"/"Ver recepción de origen".
@@ -108,9 +110,7 @@ class _MaterialLogisticsDetailState extends State<MaterialLogisticsDetail> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final title = _ml == null
-        ? 'Detalle'
-        : (_ml!.re ? 'Recepción de material' : 'Entrega de material');
+    final title = _ml == null ? 'Detalle' : (_ml!.re ? 'Recepción de material' : 'Entrega de material');
     return Scaffold(
       appBar: AppBarHeader(title),
       body: _isLoading
@@ -155,12 +155,7 @@ class _MaterialLogisticsDetailState extends State<MaterialLogisticsDetail> {
               LabelValue('Confirmado', ml.confirmado ? 'Sí' : 'No'),
             ],
           ),
-          _Section(
-            title: 'Sitios (${ml.sitios.length})',
-            children: [
-              for (final s in ml.sitios) _siteBlock(s),
-            ],
-          ),
+          _Section(title: 'Sitios (${ml.sitios.length})', children: [for (final s in ml.sitios) _siteBlock(s)]),
           if (ml.documentos.isNotEmpty) _DocumentosSection(documentos: ml.documentos),
           if (ml.qr.isNotEmpty)
             _Section(
@@ -220,11 +215,22 @@ class _MaterialLogisticsDetailState extends State<MaterialLogisticsDetail> {
   /// Barra de acción read-only (ortogonal). "Entregar" se agrega en el paso 3.
   List<Widget> _outActions(MaterialLogistics ml) {
     final actions = <Widget>[];
+    if (ml.canDeliver && AuthContext.instance.canWrite('material_logistics')) {
+      actions.add(
+        _ActionCard(
+          icon: Icons.local_shipping,
+          label: 'Entregar',
+          onTap: () => MaterialLogisticsOutFlow.runVerifyAndOpenOut(context, ml.folio, inHand: ml),
+        ),
+      );
+    }
     if (ml.hasDeliveries) {
       actions.add(_ActionCard(icon: Icons.list_alt, label: 'Ver entregas', onTap: () => _showEntregas(ml)));
     }
     if (ml.hasOrigin) {
-      actions.add(_ActionCard(icon: Icons.login, label: 'Ver recepción de origen', onTap: () => _openFolio(ml.folioIN)));
+      actions.add(
+        _ActionCard(icon: Icons.login, label: 'Ver recepción de origen', onTap: () => _openFolio(ml.folioIN)),
+      );
     }
     return actions;
   }
@@ -252,10 +258,7 @@ class _HeaderCard extends StatelessWidget {
             CircleAvatar(
               radius: 24,
               backgroundColor: colorScheme.primaryContainer,
-              child: Icon(
-                ml.re ? Icons.call_received : Icons.call_made,
-                color: colorScheme.onPrimaryContainer,
-              ),
+              child: Icon(ml.re ? Icons.call_received : Icons.call_made, color: colorScheme.onPrimaryContainer),
             ),
             Expanded(
               child: Column(
@@ -296,10 +299,7 @@ class _Section extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 6,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [SectionTitle(title), ?trailing],
-        ),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [SectionTitle(title), ?trailing]),
         ...children,
       ],
     );

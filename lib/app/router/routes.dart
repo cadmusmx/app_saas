@@ -21,6 +21,7 @@ import 'package:gaso_tenant_app/features/material_logistics/domain/material_logi
 import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_shell.dart';
 import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_list.dart';
 import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_detail.dart';
+import 'package:gaso_tenant_app/features/material_logistics/presentation/material_logistics_out_form.dart';
 
 class AppRoutes {
   AppRoutes._();
@@ -54,6 +55,7 @@ class AppRoutes {
   static const String materialLogistics = '/material-logistics';
   static const String materialLogisticsList = '/material-logistics-list';
   static const String materialLogisticsDetail = '/material-logistics-detail';
+  static const String materialLogisticsOut = '/material-logistics-out';
 
   static const String operationExpenses = '/operation-expenses';
   static const String operationExpensesList = '/operation-expenses-list';
@@ -161,6 +163,15 @@ final Map<String, WidgetBuilder> appRoutes = {
     return RbacGate(
       viewCode: 'material_logistics',
       child: MaterialLogisticsDetail(folio: folio, record: record),
+    );
+  },
+  AppRoutes.materialLogisticsOut: (context) {
+    final args = ModalRoute.of(context)!.settings.arguments;
+    final materialIn = args is MaterialLogistics ? args : null;
+    return RbacGate(
+      viewCode: 'material_logistics',
+      require: kWriteMask,
+      child: MaterialLogisticsOutForm(materialIn: materialIn),
     );
   },
   AppRoutes.operationExpenses: (_) {

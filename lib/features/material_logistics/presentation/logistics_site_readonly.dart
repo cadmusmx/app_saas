@@ -15,7 +15,11 @@ import 'package:gaso_tenant_app/features/material_logistics/domain/material_logi
 class LogisticsSiteReadonly extends StatelessWidget {
   final LogisticsSite site;
 
-  const LogisticsSiteReadonly({super.key, required this.site});
+  /// Muestra el encabezado "idSitio - nombreSitio". El form de entrega lo oculta
+  /// (el checkbox ya provee el título) para no duplicarlo.
+  final bool showHeader;
+
+  const LogisticsSiteReadonly({super.key, required this.site, this.showHeader = true});
 
   static String _s(dynamic v) => v?.toString() ?? '';
 
@@ -67,10 +71,11 @@ class LogisticsSiteReadonly extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 6,
           children: [
-            Text(
-              '${site.idSitio} - ${site.nombreSitio}',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
+            if (showHeader)
+              Text(
+                '${site.idSitio} - ${site.nombreSitio}',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              ),
             if (site.descripcionMaterial.isNotEmpty) LabelValue('Material', site.descripcionMaterial),
             if (tipos.isNotEmpty) LabelValue('Tipos', tipos),
             if (site.materialFaltante)

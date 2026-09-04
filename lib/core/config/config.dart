@@ -6,7 +6,7 @@ class Config {
   /// Entorno lógico de la app: dev | qa | prod.
   static const AppEnv appEnv = AppEnv.dev;
 
-  /// URL base de la API, En producción se genera en base al slug-tenant del usuario en sesión
+  /// URL base de la API (no prod), En producción se genera en base al slug-tenant del usuario en sesión
   static const String apiUrl = 'http://192.168.0.10:3000/api/';
 
   /// Carpeta S3 por entorno (`Qa`/`Pr`).

@@ -63,7 +63,7 @@ abstract class HttpService {
     final Tenant? tenantContext = TenantContext.instance.current;
     if (tenantContext == null) return Config.apiUrl;
     final String slug = tenantContext.slug;
-    return 'https://$slug:3000/api/';
+    return 'https://develop.$slug.com/api/';
   }
 
   Future<Response> _execute(

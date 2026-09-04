@@ -1,8 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gaso_tenant_app/core/widgets/forms/form_fields.dart';
-import 'package:gaso_tenant_app/core/widgets/lists/labels.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -10,13 +8,15 @@ import 'package:gaso_tenant_app/app/router/routes.dart';
 import 'package:gaso_tenant_app/app/widgets/appbar_header.dart';
 import 'package:gaso_tenant_app/core/auth/session_user.dart';
 import 'package:gaso_tenant_app/core/auth/auth_context.dart';
-import 'package:gaso_tenant_app/core/widgets/media/photo_picker.dart';
 import 'package:gaso_tenant_app/core/services/s3_service.dart';
 import 'package:gaso_tenant_app/core/services/messenger_service.dart';
 import 'package:gaso_tenant_app/core/helpers/formatters_helper.dart';
 import 'package:gaso_tenant_app/core/helpers/connection_helper.dart';
 import 'package:gaso_tenant_app/core/helpers/responsive_helper.dart';
 import 'package:gaso_tenant_app/core/logging/debug_log.dart';
+import 'package:gaso_tenant_app/core/widgets/forms/form_fields.dart';
+import 'package:gaso_tenant_app/core/widgets/lists/labels.dart';
+// import 'package:gaso_tenant_app/core/widgets/media/photo_picker.dart';
 import 'package:gaso_tenant_app/features/profile/presentation/widgets/profile_photo.dart';
 import 'package:gaso_tenant_app/features/profile/data/profile_service.dart';
 
@@ -29,7 +29,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final S3Service _s3Service = S3Service();
-  final PhotoPicker _photoPicker = PhotoPicker();
+  // final PhotoPicker _photoPicker = PhotoPicker();
   late final ProfileService _profileService = ProfileService();
   late final SharedPreferences _preferences;
   late final SessionUser _sessionUser;
@@ -57,7 +57,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _onPickPhoto() async {
-    try {
+    return MessengerService.info('No disponible');
+    /* try {
       final picked = await _photoPicker.pickPhoto(context);
       if (picked != null) {
         File file = File(picked.path);
@@ -66,9 +67,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       DebugLog.warning('_onPickPhoto: $e');
       MessengerService.error('No se pudo acceder al recurso');
-    }
+    } */
   }
 
+  // ignore: unused_element
   Future<void> _editProfilePhoto(File pickedFilePhoto) async {
     if (!hasConnection(context)) return;
     final fileExtension = p.extension(pickedFilePhoto.path);

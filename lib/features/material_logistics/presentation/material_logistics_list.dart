@@ -85,7 +85,7 @@ class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, 
       IconButton(
         tooltip: 'Entregar (folio)',
         onPressed: () => MaterialLogisticsOutFlow.openGiveExitModal(context),
-        icon: const Icon(Icons.local_shipping),
+        icon: const Icon(Icons.double_arrow),
       ),
       IconButton(tooltip: 'Recepción o Entrega', onPressed: _switchRE, icon: const Icon(Icons.swap_horiz)),
       IconButton(tooltip: 'Filtros', onPressed: _showFilters, icon: const Icon(Icons.filter_list)),

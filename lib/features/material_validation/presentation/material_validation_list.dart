@@ -94,7 +94,7 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
         IconButton(
           tooltip: 'Dar salida',
           onPressed: () => MaterialValidationOutFlow.openGiveExitModal(context),
-          icon: const Icon(Icons.qr_code_scanner),
+          icon: const Icon(Icons.double_arrow),
         ),
       IconButton(tooltip: 'Entrada o Salida', onPressed: _switchES, icon: const Icon(Icons.swap_horiz)),
       IconButton(tooltip: 'Filtros', onPressed: _showFilters, icon: const Icon(Icons.filter_list)),

@@ -298,7 +298,7 @@ class _Section extends StatelessWidget {
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [SectionTitle(title), if (trailing != null) trailing!],
+          children: [SectionTitle(title), ?trailing],
         ),
         ...children,
       ],

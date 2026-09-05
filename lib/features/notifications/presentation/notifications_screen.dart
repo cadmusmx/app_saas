@@ -44,8 +44,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         title: const Text('Eliminar todas'),
         content: Text('¿Estás seguro de que deseas eliminar las ${_notifications.length} notificaciones?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Eliminar todas')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCELAR')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('ELIMINAR TODAS')),
         ],
       ),
     );
@@ -66,7 +66,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           if (_notifications.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_sweep),
-              tooltip: 'Borrar todas',
+              tooltip: 'BORRAR TODAS',
               onPressed: _clearAllNotifications,
             ),
         ],
@@ -167,7 +167,7 @@ class _NotificationCard extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.close, size: 20),
                   onPressed: onDelete,
-                  tooltip: 'Eliminar',
+                  tooltip: 'ELIMINAR',
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),

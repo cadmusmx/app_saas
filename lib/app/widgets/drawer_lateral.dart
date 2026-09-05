@@ -4,7 +4,6 @@ import 'package:gaso_tenant_app/app/router/routes.dart';
 import 'package:gaso_tenant_app/app/widgets/menu_registry.dart';
 import 'package:gaso_tenant_app/core/auth/auth_context.dart';
 import 'package:gaso_tenant_app/core/tenant/tenant_context.dart';
-import 'package:gaso_tenant_app/core/tenant/tenant_storage.dart';
 import 'package:gaso_tenant_app/core/widgets/lists/tiles.dart';
 import 'package:gaso_tenant_app/core/services/theme_service.dart';
 import 'package:gaso_tenant_app/features/auth/data/auth_service.dart';
@@ -62,8 +61,8 @@ class _DrawerLateralState extends State<DrawerLateral> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Image.asset("assets/images/logo.png", width: 16, color: colorScheme.onPrimary),
-                    Text('MULTI-TENANT', style: textTheme.titleSmall?.copyWith(color: colorScheme.onPrimary)),
+                    Image.asset(user?.branding.logoUrl ?? "assets/images/logo.png", width: 16, color: colorScheme.onPrimary),
+                    Text((user?.tenant.slug ?? 'MULTI-TENANT').toUpperCase(), style: textTheme.titleSmall?.copyWith(color: colorScheme.onPrimary)),
                   ],
                 ),
               ],
@@ -106,21 +105,6 @@ class _DrawerLateralState extends State<DrawerLateral> {
           ),
           SizedBox(height: 32),
           Divider(),
-          ListTile(
-            title: Text('CAMBIAR EMPRESA', style: textTheme.bodyMedium),
-            trailing: Icon(Icons.swap_horiz, color: colorScheme.primary),
-            onTap: () async {
-              Navigator.pop(context);
-              final authService = Provider.of<AuthService>(context, listen: false);
-              await authService.logout();
-              await TenantStorage().clear();
-              TenantContext.instance.clearTenant();
-              if (context.mounted) {
-                // Login sin empresa pre-llenada → usuario escribe nuevo dominio
-                Navigator.of(context).pushReplacementNamed(AppRoutes.login);
-              }
-            },
-          ),
           ListTile(
             title: Text('CERRAR SESIÓN', style: textTheme.bodyMedium),
             onTap: () async {

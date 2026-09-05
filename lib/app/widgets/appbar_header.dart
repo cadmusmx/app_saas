@@ -3,12 +3,13 @@ import 'package:gaso_tenant_app/features/notifications/data/notification_service
 import 'package:gaso_tenant_app/features/notifications/presentation/notifications_screen.dart';
 
 class AppBarHeader extends StatefulWidget implements PreferredSizeWidget {
-  final bool showNotifications;
   final String? title;
   final List<Widget>? actions;
   final Widget? leading;
+  final bool showNotifications;
+  final bool primary;
 
-  const AppBarHeader(this.title, {super.key, this.showNotifications = false, this.actions, this.leading});
+  const AppBarHeader(this.title, {super.key, this.showNotifications = false, this.primary = true, this.actions, this.leading});
 
   @override
   State<AppBarHeader> createState() => _AppBarHeaderState();
@@ -26,9 +27,9 @@ class _AppBarHeaderState extends State<AppBarHeader> {
     TextTheme textTheme = Theme.of(context).textTheme;
     return AppBar(
       leadingWidth: 32,
-      backgroundColor: colorScheme.primary,
-      foregroundColor: colorScheme.onPrimary,
-      titleTextStyle: textTheme.titleMedium?.copyWith(color: colorScheme.onPrimary),
+      backgroundColor: widget.primary ? colorScheme.primary : null,
+      foregroundColor: widget.primary ? colorScheme.onPrimary : null,
+      titleTextStyle: textTheme.titleMedium?.copyWith(color: widget.primary ? colorScheme.onPrimary : null),
       leading: widget.leading,
       title: Row(
         mainAxisSize: MainAxisSize.max,
@@ -40,7 +41,7 @@ class _AppBarHeaderState extends State<AppBarHeader> {
               valueListenable: _notificationService.notificationCount,
               builder: (context, count, child) {
                 return IconButton(
-                  tooltip: 'Notificaciones',
+                  tooltip: 'NOTIFICACIONES',
                   onPressed: () {
                     Navigator.push(context, MaterialPageRoute<void>(builder: (context) => NotificationsScreen()));
                   },

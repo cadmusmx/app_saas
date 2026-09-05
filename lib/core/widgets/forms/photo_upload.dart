@@ -111,14 +111,14 @@ mixin PhotoGridMixin<T extends BasePhotosGrid> on State<T> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cerrar'),
+            child: const Text('CERRAR'),
           ),
           TextButton(
             onPressed: () {
               if (mounted) setState(() => clearPhotoData(index));
               Navigator.pop(ctx);
             },
-            child: const Text('Eliminar'),
+            child: const Text('ELIMINAR'),
           ),
         ],
       ),
@@ -177,12 +177,12 @@ mixin PhotoGridMixin<T extends BasePhotosGrid> on State<T> {
                           ? TextButton.icon(
                               onPressed: () => _showPhotoManageDialog(i, field.label),
                               icon: const Icon(Icons.settings),
-                              label: const Text('Opciones'),
+                              label: const Text('OPCIONES'),
                             )
                           : TextButton.icon(
                               onPressed: () => _onPickPhoto(i),
                               icon: const Icon(Icons.upload),
-                              label: const Text('Subir'),
+                              label: const Text('SUBIR'),
                             ),
                     ),
                   ],

@@ -41,10 +41,10 @@ class SessionRetryScreen extends StatelessWidget {
                 icon: busy
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.refresh),
-                label: Text(busy ? 'Re-intentando...' : 'Reintentar'),
+                label: Text(busy ? 'PROCESANDO...' : 'REINTENTAR'),
               ),
               const SizedBox(height: 8),
-              TextButton(onPressed: busy ? null : onSignOut, child: const Text('Cerrar sesión')),
+              TextButton(onPressed: busy ? null : onSignOut, child: const Text('CERRAR SESIÓN')),
             ],
           ),
         ),

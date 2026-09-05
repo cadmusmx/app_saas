@@ -175,7 +175,7 @@ class _MaterialValidationOutFormState extends State<MaterialValidationOutForm> {
               OutlinedButton.icon(
                 icon: const Icon(Icons.attach_file),
                 label: Text(
-                  localPath != null ? localPath!.split('/').last : 'Seleccionar archivo',
+                  localPath != null ? localPath!.split('/').last : 'SELECCIONAR ARCHIVO',
                   overflow: TextOverflow.ellipsis,
                 ),
                 onPressed: () async {
@@ -198,14 +198,14 @@ class _MaterialValidationOutFormState extends State<MaterialValidationOutForm> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('CANCELAR')),
             TextButton(
               onPressed: () {
                 if (nameController.text.trim().isEmpty) return MessengerService.info('El nombre es obligatorio.');
                 if (localPath == null) return MessengerService.info('Selecciona un archivo.');
                 Navigator.pop(ctx, true);
               },
-              child: const Text('Aceptar'),
+              child: const Text('ACEPTAR'),
             ),
           ],
         ),
@@ -264,8 +264,8 @@ class _MaterialValidationOutFormState extends State<MaterialValidationOutForm> {
         title: const Text('Confirmar salida'),
         content: const Text('Se generará la salida de material a partir de esta entrada.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Confirmar')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('CANCELAR')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('CONFIRMAR')),
         ],
       ),
     );
@@ -477,13 +477,13 @@ class _MaterialValidationOutFormState extends State<MaterialValidationOutForm> {
             if (_in.tarimas.isNotEmpty)
               TextButton.icon(
                 icon: const Icon(Icons.view_module_outlined, size: 16),
-                label: const Text('Ver tarimas'),
+                label: const Text('VER TARIMAS'),
                 onPressed: () => showImagesDialog(context, images: imagesFromMap(_in.tarimas)),
               ),
             if (_inheritedDocs.isNotEmpty)
               TextButton.icon(
                 icon: const Icon(Icons.folder_open, size: 16),
-                label: Text('Documentos (${_inheritedDocs.length})'),
+                label: Text('DOCUMENTOS (${_inheritedDocs.length})'),
                 onPressed: _showInheritedDocs,
               ),
           ],
@@ -537,7 +537,7 @@ class _MaterialValidationOutFormState extends State<MaterialValidationOutForm> {
             ],
           ),
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar'))],
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CERRAR'))],
       ),
     );
   }

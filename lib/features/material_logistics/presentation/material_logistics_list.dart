@@ -83,12 +83,12 @@ class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, 
   List<Widget>? buildAppBarActions() {
     return [
       IconButton(
-        tooltip: 'Entregar (folio)',
+        tooltip: 'ENTREGAR (FOLIO)',
         onPressed: () => MaterialLogisticsOutFlow.openGiveExitModal(context),
         icon: const Icon(Icons.double_arrow),
       ),
-      IconButton(tooltip: 'Recepción o Entrega', onPressed: _switchRE, icon: const Icon(Icons.swap_horiz)),
-      IconButton(tooltip: 'Filtros', onPressed: _showFilters, icon: const Icon(Icons.filter_list)),
+      IconButton(tooltip: 'RECEPCIÓN O ENTREGA', onPressed: _switchRE, icon: const Icon(Icons.swap_horiz)),
+      IconButton(tooltip: 'FILTROS', onPressed: _showFilters, icon: const Icon(Icons.filter_list)),
     ];
   }
 
@@ -195,7 +195,7 @@ class _MaterialLogisticsListState extends BaseListScreen<MaterialLogisticsList, 
                   ],
                 ),
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cerrar'))],
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('CERRAR'))],
       ),
     );
   }

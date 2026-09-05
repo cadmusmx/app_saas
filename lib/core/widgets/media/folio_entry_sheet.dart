@@ -54,7 +54,7 @@ Future<String?> showFolioEntrySheet(
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.qr_code_scanner),
-                  label: const Text('Escanear'),
+                  label: const Text('ESCANEAR'),
                   onPressed: () async {
                     final raw = await Navigator.of(
                       ctx,
@@ -67,7 +67,7 @@ Future<String?> showFolioEntrySheet(
               Expanded(
                 child: FilledButton(
                   onPressed: () => Navigator.pop(ctx, stripFolioScheme(controller.text)),
-                  child: const Text('Continuar'),
+                  child: const Text('CONTINUAR'),
                 ),
               ),
             ],

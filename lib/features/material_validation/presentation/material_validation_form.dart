@@ -279,8 +279,8 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Confirmar')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('CANCELAR')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('CONFIRMAR')),
         ],
       ),
     );
@@ -383,8 +383,8 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Confirmar')),
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('CANCELAR')),
+              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('CONFIRMAR')),
             ],
           ),
         );
@@ -793,7 +793,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
                     label: Text(
                       localPath != null
                           ? localPath!.split('/').last
-                          : (existingFileName.isNotEmpty ? existingFileName : 'Seleccionar archivo'),
+                          : (existingFileName.isNotEmpty ? existingFileName : 'SELECCIONAR ARCHIVO'),
                       overflow: TextOverflow.ellipsis,
                     ),
                     onPressed: () async {
@@ -822,7 +822,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('CANCELAR')),
                 TextButton(
                   onPressed: () {
                     if (nameController.text.trim().isEmpty) {
@@ -835,7 +835,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
                     }
                     Navigator.pop(ctx, true);
                   },
-                  child: const Text('Aceptar'),
+                  child: const Text('ACEPTAR'),
                 ),
               ],
             );
@@ -1026,7 +1026,7 @@ class _MaterialValidationFormState extends State<MaterialValidationForm> {
                   });
                 }
               },
-              label: Text(_es ? 'Entrada' : 'Salida'),
+              label: Text(_es ? 'ENTRADA' : 'SALIDA'),
               icon: Icon(_es ? Icons.login : Icons.logout),
               style: FilledButton.styleFrom(
                 backgroundColor: colorScheme.secondary,

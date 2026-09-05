@@ -138,13 +138,13 @@ Future<void> _showGenericDialog<T>(
                 ? [
                     IconButton(
                       icon: const Icon(Icons.arrow_back),
-                      tooltip: 'Anterior',
+                      tooltip: 'ANTERIOR',
                       color: currentIndex == 0 ? Colors.grey : null,
                       onPressed: currentIndex == 0 ? null : () => setState(() => currentIndex--),
                     ),
                     IconButton(
                       icon: const Icon(Icons.arrow_forward),
-                      tooltip: 'Siguiente',
+                      tooltip: 'SIGUIENTE',
                       color: currentIndex == items.length - 1 ? Colors.grey : null,
                       onPressed: currentIndex == items.length - 1 ? null : () => setState(() => currentIndex++),
                     ),

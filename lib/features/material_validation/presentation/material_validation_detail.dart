@@ -114,7 +114,7 @@ class _MaterialValidationDetailState extends State<MaterialValidationDetail> {
           _Section(
             title: 'Transporte',
             trailing: _ImageButton(
-              label: 'Ver fotos',
+              label: 'VER FOTOS',
               icon: Icons.photo_library_outlined,
               onTap: () => showImagesDialog(
                 context,
@@ -132,7 +132,7 @@ class _MaterialValidationDetailState extends State<MaterialValidationDetail> {
             title: 'Registro de piezas',
             trailing: vm.tarimas.isNotEmpty
                 ? _ImageButton(
-                    label: 'Ver tarimas',
+                    label: 'VER TARIMAS',
                     icon: Icons.view_module_outlined,
                     onTap: () => showImagesDialog(context, images: imagesFromMap(vm.tarimas)),
                   )
@@ -148,7 +148,7 @@ class _MaterialValidationDetailState extends State<MaterialValidationDetail> {
           _Section(
             title: 'Firma ASP',
             trailing: _ImageButton(
-              label: 'Ver firma',
+              label: 'VER FIRMA',
               icon: Icons.draw_outlined,
               onTap: null, // se asigna abajo
             ),
@@ -158,7 +158,7 @@ class _MaterialValidationDetailState extends State<MaterialValidationDetail> {
           _Section(
             title: 'QR del folio',
             trailing: _ImageButton(
-              label: 'Ver QR',
+              label: 'VER QR',
               icon: Icons.qr_code,
               onTap: () => showImagesDialog(
                 context,
@@ -428,7 +428,7 @@ class _ImageButton extends StatelessWidget {
     return TextButton.icon(
       onPressed: onTap,
       icon: Icon(icon, size: 16),
-      label: Text(label),
+      label: Text(label.toUpperCase()),
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         visualDensity: VisualDensity.compact,
@@ -451,7 +451,7 @@ class _ActionCard extends StatelessWidget {
       child: FilledButton.icon(
         onPressed: onTap,
         icon: Icon(icon),
-        label: Text(label),
+        label: Text(label.toUpperCase()),
         style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
       ),
     );

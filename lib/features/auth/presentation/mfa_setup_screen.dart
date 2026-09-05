@@ -170,7 +170,7 @@ class _MfaSetupScreenState extends State<MfaSetupScreen> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.copy),
-                          tooltip: 'Copiar clave',
+                          tooltip: 'COPIAR CLAVE',
                           onPressed: _copySecret,
                         ),
                       ],
@@ -203,7 +203,7 @@ class _MfaSetupScreenState extends State<MfaSetupScreen> {
                 else
                   FilledButton(
                     onPressed: _activate,
-                    child: const Text('Activar verificación'),
+                    child: const Text('ACTIVAR VERIFICACIÓN'),
                   ),
               ],
             ),

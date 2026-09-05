@@ -92,12 +92,12 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
     return [
       if (AuthContext.instance.canWrite('material_validation'))
         IconButton(
-          tooltip: 'Dar salida',
+          tooltip: 'DAR SALIDA',
           onPressed: () => MaterialValidationOutFlow.openGiveExitModal(context),
           icon: const Icon(Icons.double_arrow),
         ),
-      IconButton(tooltip: 'Entrada o Salida', onPressed: _switchES, icon: const Icon(Icons.swap_horiz)),
-      IconButton(tooltip: 'Filtros', onPressed: _showFilters, icon: const Icon(Icons.filter_list)),
+      IconButton(tooltip: 'ENTRADA O SALIDA', onPressed: _switchES, icon: const Icon(Icons.swap_horiz)),
+      IconButton(tooltip: 'FILTROS', onPressed: _showFilters, icon: const Icon(Icons.filter_list)),
     ];
   }
 
@@ -198,7 +198,7 @@ class _MaterialValidationListState extends BaseListScreen<MaterialValidationList
             ],
           ),
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar'))],
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CERRAR'))],
       ),
     );
   }

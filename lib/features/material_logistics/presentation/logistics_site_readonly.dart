@@ -104,14 +104,14 @@ class LogisticsSiteReadonly extends StatelessWidget {
                     TextButton.icon(
                       onPressed: () => showImagesDialog(context, images: evidencias),
                       icon: const Icon(Icons.photo_library_outlined, size: 16),
-                      label: Text('Evidencias (${evidencias.length})'),
+                      label: Text('EVIDENCIAS (${evidencias.length})'),
                       style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                     ),
                   if (tarimas.isNotEmpty)
                     TextButton.icon(
                       onPressed: () => showImagesDialog(context, images: tarimas),
                       icon: const Icon(Icons.view_module_outlined, size: 16),
-                      label: Text('Tarimas (${site.tarimas.length})'),
+                      label: Text('TARIMAS (${site.tarimas.length})'),
                       style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                     ),
                 ],

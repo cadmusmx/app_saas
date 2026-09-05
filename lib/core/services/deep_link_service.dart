@@ -178,14 +178,14 @@ class DeepLinkService with WidgetsBindingObserver {
           '¿Cerrar sesión y entrar a "$newSlug"?',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dialogCtx).pop(), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.of(dialogCtx).pop(), child: const Text('CANCELAR')),
           FilledButton(
             onPressed: () async {
               Navigator.of(dialogCtx).pop();
               await AuthService.instance.logout();
               _goToLogin(newSlug);
             },
-            child: const Text('Cambiar empresa'),
+            child: const Text('CAMBIAR EMPRESA'),
           ),
         ],
       ),

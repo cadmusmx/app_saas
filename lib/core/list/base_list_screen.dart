@@ -62,7 +62,7 @@ abstract class BaseListScreen<T extends StatefulWidget, O> extends State<T> {
   bool get shouldClearFiltersOnEmpty => false;
 
   List<Widget>? buildAppBarActions() {
-    return [IconButton(tooltip: 'Filtrar', onPressed: showFilters, icon: const Icon(Icons.filter_list))];
+    return [IconButton(tooltip: 'FILTRAR', onPressed: showFilters, icon: const Icon(Icons.filter_list))];
   }
 
   Future<bool> _init() async {

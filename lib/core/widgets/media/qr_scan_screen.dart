@@ -47,7 +47,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
               if (state.torchState == TorchState.unavailable) return const SizedBox.shrink();
               final on = state.torchState == TorchState.on;
               return IconButton(
-                tooltip: on ? 'Apagar linterna' : 'Encender linterna',
+                tooltip: on ? 'APAGAR LINTERNA' : 'ENCENDER LINTERNA',
                 icon: Icon(on ? Icons.flash_on : Icons.flash_off),
                 onPressed: () => _controller.toggleTorch(),
               );

@@ -184,7 +184,7 @@ class _SitesFormState extends State<SitesForm> {
                       label: Text(
                         localPath != null
                             ? localPath!.split('/').last
-                            : (existingFileName.isNotEmpty ? existingFileName : 'Seleccionar archivo'),
+                            : (existingFileName.isNotEmpty ? existingFileName : 'SELECCIONAR ARCHIVO'),
                         overflow: TextOverflow.ellipsis,
                       ),
                       onPressed: () async {
@@ -227,7 +227,7 @@ class _SitesFormState extends State<SitesForm> {
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('CANCELAR')),
                 TextButton(
                   onPressed: () {
                     if (idTipoForm == null) {
@@ -238,7 +238,7 @@ class _SitesFormState extends State<SitesForm> {
                     }
                     Navigator.pop(ctx, true);
                   },
-                  child: const Text('Aceptar'),
+                  child: const Text('ACEPTAR'),
                 ),
               ],
             );
@@ -346,7 +346,7 @@ class _SitesFormState extends State<SitesForm> {
             ),
           ),
           if (hasFile)
-            IconButton(tooltip: 'Ver documento', onPressed: () => _verDocumento(e), icon: const Icon(Icons.visibility)),
+            IconButton(tooltip: 'VER DOCUMENTO', onPressed: () => _verDocumento(e), icon: const Icon(Icons.visibility)),
           IconButton(onPressed: () => _addEditEvidencia(index), icon: const Icon(Icons.edit)),
           IconButton(onPressed: () => _removeEvidencia(index), icon: const Icon(Icons.delete)),
         ],
@@ -394,7 +394,7 @@ class _SitesFormState extends State<SitesForm> {
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('CANCELAR')),
                 TextButton(
                   onPressed: () {
                     final hasTarima = tarimaLocal != null || tarimaExisting.isNotEmpty;
@@ -404,7 +404,7 @@ class _SitesFormState extends State<SitesForm> {
                     }
                     Navigator.pop(ctx, true);
                   },
-                  child: const Text('Aceptar'),
+                  child: const Text('ACEPTAR'),
                 ),
               ],
             );

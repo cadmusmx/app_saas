@@ -187,7 +187,7 @@ class _NoticeHostState extends State<_NoticeHost> with SingleTickerProviderState
                             _dismiss();
                           },
                           child: Text(
-                            widget.actionLabel!,
+                            (widget.actionLabel ?? 'OK').toUpperCase(),
                             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                           ),
                         ),

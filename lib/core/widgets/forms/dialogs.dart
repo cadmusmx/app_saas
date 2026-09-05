@@ -19,7 +19,7 @@ Future<bool?> showTFDialog(BuildContext context, String title, String message, S
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(child: Text(title)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context, null))
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context, null)),
               ],
             ),
             content: Text(message, style: textStyle),
@@ -36,7 +36,12 @@ Future<bool?> showTFDialog(BuildContext context, String title, String message, S
 
 /// ### (respuesta, no preguntar)
 Future<(bool, bool)?> showTFDialogAsk(
-    BuildContext context, String title, String message, String trueAnswer, String falseAnswer) {
+  BuildContext context,
+  String title,
+  String message,
+  String trueAnswer,
+  String falseAnswer,
+) {
   bool dontAsk = false;
   return showDialog<(bool, bool)>(
     context: context,
@@ -50,7 +55,7 @@ Future<(bool, bool)?> showTFDialogAsk(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(child: Text(title)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context, null))
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context, null)),
               ],
             ),
             content: Column(
@@ -62,19 +67,22 @@ Future<(bool, bool)?> showTFDialogAsk(
                   onTap: () => setState(() => dontAsk = !dontAsk),
                   child: Row(
                     children: [
-                      Checkbox(
-                        value: dontAsk,
-                        onChanged: (value) => setState(() => dontAsk = value ?? false),
-                      ),
+                      Checkbox(value: dontAsk, onChanged: (value) => setState(() => dontAsk = value ?? false)),
                       const Text("No volver a preguntar"),
                     ],
                   ),
-                )
+                ),
               ],
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context, (false, dontAsk)), child: Text(falseAnswer)),
-              TextButton(onPressed: () => Navigator.pop(context, (true, dontAsk)), child: Text(trueAnswer)),
+              TextButton(
+                onPressed: () => Navigator.pop(context, (false, dontAsk)),
+                child: Text(falseAnswer),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, (true, dontAsk)),
+                child: Text(trueAnswer),
+              ),
             ],
           );
         },
@@ -84,7 +92,12 @@ Future<(bool, bool)?> showTFDialogAsk(
 }
 
 Future<bool?> showTFContentDialog(
-    BuildContext context, String title, Widget content, String trueAnswer, String falseAnswer) {
+  BuildContext context,
+  String title,
+  Widget content,
+  String trueAnswer,
+  String falseAnswer,
+) {
   return showDialog<bool?>(
     context: context,
     barrierDismissible: false,
@@ -96,7 +109,7 @@ Future<bool?> showTFContentDialog(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(child: Text(title)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context, null))
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context, null)),
               ],
             ),
             content: content,
@@ -124,13 +137,16 @@ Future<T?> showOptionsDialog<T>(BuildContext context, String title, String messa
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(child: Text(title)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context, null))
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context, null)),
               ],
             ),
             content: Text(message, style: textStyle),
             actions: [
               for (var option in options.entries)
-                TextButton(onPressed: () => Navigator.pop(context, option.value), child: Text(option.key))
+                TextButton(
+                  onPressed: () => Navigator.pop(context, option.value),
+                  child: Text(option.key),
+                ),
             ],
           );
         },
@@ -141,8 +157,14 @@ Future<T?> showOptionsDialog<T>(BuildContext context, String title, String messa
 
 /// Dialog con select (options < valor, etiqueta >) y campo de texto, al confirmar retorna sus valores,
 Future<OptionText<String>?> showOptionTextDialog(
-    BuildContext context, String title, List<OptionSL> options, String selectLabel, String textLabel,
-    {String? option, String text = ''}) {
+  BuildContext context,
+  String title,
+  List<OptionSL> options,
+  String selectLabel,
+  String textLabel, {
+  String? option,
+  String text = '',
+}) {
   OptionText<String> optionText = OptionText(option, text);
   bool isValid = false;
   return showDialog<OptionText<String>>(
@@ -156,7 +178,7 @@ Future<OptionText<String>?> showOptionTextDialog(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(child: Text(title)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context, null))
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context, null)),
               ],
             ),
             content: Column(
@@ -190,7 +212,7 @@ Future<OptionText<String>?> showOptionTextDialog(
                   }),
                   inputFormatters: [
                     LengthLimitingTextInputFormatter(300),
-                    FilteringTextInputFormatter.deny(notUsedExp)
+                    FilteringTextInputFormatter.deny(notUsedExp),
                   ],
                 ),
               ],
@@ -198,7 +220,7 @@ Future<OptionText<String>?> showOptionTextDialog(
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, isValid ? optionText : null),
-                child: Text(isValid ? 'Confirmar' : 'Cancelar'),
+                child: Text(isValid ? 'CONFIRMAR' : 'CANCELAR'),
               ),
             ],
           );
@@ -227,7 +249,7 @@ Future<void> showDetailsDialog(BuildContext context, String title, List<Widget> 
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(child: Text(title)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
               ],
             ),
             content: SingleChildScrollView(
@@ -283,8 +305,14 @@ Future<void> showFilterModal(
                   child: Row(
                     spacing: 8,
                     children: [
-                      Expanded(child: TextButton(onPressed: onClean, child: const Text('Limpiar'))),
-                      Expanded(child: FilledButton(onPressed: onFilter, child: const Text('Aplicar filtros'))),
+                      Expanded(
+                        flex: 2,
+                        child: TextButton(onPressed: onClean, child: const Text('LIMPIAR')),
+                      ),
+                      Expanded(
+                        flex: 3,
+                        child: FilledButton(onPressed: onFilter, child: const Text('APLICAR FILTROS')),
+                      ),
                     ],
                   ),
                 ),
@@ -310,7 +338,7 @@ Future<void> showNavigationDialog(BuildContext context, String title, List<NavDi
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(child: Text(title)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context))
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
               ],
             ),
             content: SingleChildScrollView(

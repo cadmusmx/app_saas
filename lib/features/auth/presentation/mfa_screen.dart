@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gaso_tenant_app/app/widgets/appbar_header.dart';
 import 'package:provider/provider.dart';
 import 'package:gaso_tenant_app/app/router/routes.dart';
 import 'package:gaso_tenant_app/core/services/messenger_service.dart';
@@ -70,7 +71,7 @@ class _MfaScreenState extends State<MfaScreen> {
     final isLoading = _state == _MfaState.loading;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Verificación en dos pasos')),
+      appBar: AppBarHeader('Verificación en dos pasos', primary: false),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(32),
@@ -82,12 +83,7 @@ class _MfaScreenState extends State<MfaScreen> {
               spacing: 16,
               children: [
                 Icon(Icons.lock_outline, size: 64, color: colorScheme.primary),
-                const Text(
-                  'Verificación en dos pasos',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-                  textAlign: TextAlign.center,
-                ),
-                const Text('Ingresa el código de 6 dígitos de tu app autenticadora.', textAlign: TextAlign.center),
+                const Text('Ingresa el código de 6 dígitos de tu app de autenticación.', textAlign: TextAlign.center),
                 TextField(
                   controller: _codeController,
                   enabled: !isLoading,
@@ -105,7 +101,7 @@ class _MfaScreenState extends State<MfaScreen> {
                 if (isLoading)
                   const Center(child: CircularProgressIndicator())
                 else
-                  FilledButton(onPressed: _verify, child: const Text('Verificar')),
+                  FilledButton(onPressed: _verify, child: const Text('VERIFICAR')),
               ],
             ),
           ),

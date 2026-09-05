@@ -63,6 +63,7 @@ const List<MenuItem> kMobileMenu = [
     AppRoutes.fuelRequestList,
     AppRoutes.fuelRequest,
     icon: Icons.local_gas_station_sharp,
+    description: 'SOLICITUDES',
   ),
   MenuItem(
     'vehicles',
@@ -71,7 +72,7 @@ const List<MenuItem> kMobileMenu = [
     AppRoutes.vehicleLiabilityList,
     AppRoutes.vehicleLiability,
     icon: Icons.fact_check_sharp,
-    description: 'RESPONSABILIDAD Y SERVICIOS',
+    description: 'SERVICIOS Y DOCUMENTACIÓN',
   ),
   MenuItem(
     'vehicles',
@@ -88,6 +89,7 @@ const List<MenuItem> kMobileMenu = [
     AppRoutes.vehicleExpensesList,
     AppRoutes.vehicleExpenses,
     icon: Icons.payments,
+    description: 'MANTENIMIENTO, SERVICIOS, OTROS',
   ),
   MenuItem(
     'operating_expenses',
@@ -96,6 +98,7 @@ const List<MenuItem> kMobileMenu = [
     AppRoutes.operationExpensesList,
     AppRoutes.operationExpenses,
     icon: Icons.request_quote_sharp,
+    description: 'OPERACIÓN Y ',
   ),
   MenuItem(
     'warehouses',
@@ -104,7 +107,7 @@ const List<MenuItem> kMobileMenu = [
     AppRoutes.materialLogisticsList,
     AppRoutes.materialLogistics,
     icon: Icons.move_up_sharp,
-    description: 'RECEPCIÓN Y ENTREGA A VARIOS SITIOS',
+    description: 'VARIOS SITIOS',
   ),
   MenuItem(
     'warehouses',
@@ -113,7 +116,7 @@ const List<MenuItem> kMobileMenu = [
     AppRoutes.materialValidationList,
     AppRoutes.materialValidation,
     icon: Icons.inventory_sharp,
-    description: 'ENTRADA Y SALIDA POR PROYECTO',
+    description: 'POR PROYECTO',
   ),
   MenuItem(
     'human_capital',

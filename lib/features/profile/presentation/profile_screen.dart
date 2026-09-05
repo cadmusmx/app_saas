@@ -168,14 +168,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, null), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(context, null), child: const Text('CANCELAR')),
             TextButton(
               onPressed: () {
                 if (formKey.currentState!.validate()) {
                   Navigator.pop(context, userNameController.text.trim());
                 }
               },
-              child: const Text('Modificar'),
+              child: const Text('MODIFICAR'),
             ),
           ],
         );
@@ -282,14 +282,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context, null), child: const Text('Cancelar')),
+                TextButton(onPressed: () => Navigator.pop(context, null), child: const Text('CANCELAR')),
                 TextButton(
                   onPressed: () {
                     if (formKey.currentState!.validate()) {
                       Navigator.pop(context, newPasswordController.text);
                     }
                   },
-                  child: const Text('Modificar'),
+                  child: const Text('MODIFICAR'),
                 ),
               ],
             );

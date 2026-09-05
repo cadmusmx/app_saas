@@ -33,7 +33,7 @@ class _ConnectionStatusListenerState extends State<ConnectionStatusListener> {
                 actions: [
                   TextButton(
                     onPressed: () => messenger.hideCurrentMaterialBanner(),
-                    child: const Text('Cerrar', style: TextStyle(color: Colors.white)),
+                    child: const Text('CERRAR', style: TextStyle(color: Colors.white)),
                   ),
                 ],
               ),

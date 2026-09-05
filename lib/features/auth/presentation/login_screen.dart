@@ -194,7 +194,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (isLoading)
                   const Center(child: CircularProgressIndicator())
                 else
-                  FilledButton(onPressed: _login, child: const Text('Iniciar Sesión')),
+                  FilledButton(onPressed: _login, child: const Text('INICIAR SESIÓN')),
               ],
             ),
           ),

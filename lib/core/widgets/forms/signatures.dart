@@ -32,7 +32,7 @@ class _SignatureCardState extends State<SignatureCard> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cerrar'),
+            child: const Text('CERRAR'),
           ),
         ],
       ),
@@ -61,7 +61,7 @@ class _SignatureCardState extends State<SignatureCard> {
         Row(
           children: [
             if (widget.existingSignature != null)
-              Flexible(child: TextButton(onPressed: widget.onRemake, child: const Text('Rehacer')))
+              Flexible(child: TextButton(onPressed: widget.onRemake, child: const Text('REHACER')))
             else ...[
               Flexible(
                 child: TextButton(
@@ -74,12 +74,12 @@ class _SignatureCardState extends State<SignatureCard> {
                         });
                       }
                     },
-                    child: const Text('Limpiar')),
+                    child: const Text('LIMPIAR')),
               ),
               Flexible(
                 child: TextButton(
                   onPressed: () => setState(() => widget.controller.disabled = !widget.controller.disabled),
-                  child: Text(widget.controller.disabled ? 'Desbloquear' : 'Bloquear'),
+                  child: Text(widget.controller.disabled ? 'DESBLOQUEAR' : 'BLOQUEAR'),
                 ),
               ),
             ],
@@ -90,7 +90,7 @@ class _SignatureCardState extends State<SignatureCard> {
                     final bytes = widget.existingSignature ?? await widget.controller.toPngBytes();
                     if (bytes != null) _showSign(bytes);
                   },
-                  child: const Text('Ver'),
+                  child: const Text('VER'),
                 ),
               ),
           ],

@@ -77,7 +77,7 @@ class AccessDeniedScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              TextButton(onPressed: () => Navigator.of(context).maybePop(), child: const Text('Volver')),
+              TextButton(onPressed: () => Navigator.of(context).maybePop(), child: const Text('VOLVER')),
             ],
           ),
         ),

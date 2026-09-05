@@ -101,7 +101,7 @@ Future<void> showInfoLetterDialog(BuildContext context, InfoLetter letter) {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Entendido')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('ENTENDIDO')),
         ],
       );
     },

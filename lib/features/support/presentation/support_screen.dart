@@ -153,7 +153,7 @@ class _SupportScreenState extends State<SupportScreen> {
                     child: OutlinedButton.icon(
                       onPressed: _clearCache,
                       icon: Icon(Icons.cached),
-                      label: Text('Borrar cache'),
+                      label: Text('BORRAR CACHE'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: colorScheme.primary,
                         side: BorderSide(color: colorScheme.primary),
@@ -200,7 +200,7 @@ class _SupportScreenState extends State<SupportScreen> {
                           }
                         },
                         icon: Icon(Icons.clear_all),
-                        label: Text('Borrar registros'),
+                        label: Text('BORRAR REGISTROS'),
                       ),
                     ),
                   SizedBox(
@@ -208,7 +208,7 @@ class _SupportScreenState extends State<SupportScreen> {
                     child: OutlinedButton.icon(
                       onPressed: _logout,
                       icon: Icon(Icons.logout),
-                      label: Text('Cerrar sesión'),
+                      label: Text('CERRAR SESIÓN'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: colorScheme.error,
                         side: BorderSide(color: colorScheme.error),

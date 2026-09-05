@@ -155,8 +155,8 @@ class _MaterialLogisticsOutFormState extends State<MaterialLogisticsOutForm> {
         title: const Text('Nombre del documento'),
         content: TextField(controller: nameController, maxLength: 100, decoration: inputDec('Nombre')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Aceptar')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('CANCELAR')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('ACEPTAR')),
         ],
       ),
     );
@@ -345,7 +345,7 @@ class _MaterialLogisticsOutFormState extends State<MaterialLogisticsOutForm> {
                         icon: _isSubmitting
                             ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                             : const Icon(Icons.local_shipping),
-                        label: Text(_isSubmitting ? 'Enviando…' : 'Registrar entrega'),
+                        label: Text(_isSubmitting ? 'ENVIANDO…' : 'REGISTRAR ENTREGA'),
                         style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
                       ),
                     ),
@@ -405,7 +405,7 @@ class _MaterialLogisticsOutFormState extends State<MaterialLogisticsOutForm> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Expanded(child: SectionTitle('Documentos', subtitle: 'Los del arribo se conservan; puedes agregar nuevos.')),
-            IconButton(tooltip: 'Agregar documento', icon: const Icon(Icons.add), onPressed: _pickNewDoc),
+            IconButton(tooltip: 'AGREGAR DOCUMENTO', icon: const Icon(Icons.add), onPressed: _pickNewDoc),
           ],
         ),
         for (final d in _inheritedDocs)

@@ -68,8 +68,8 @@ class _SitesScreenState extends State<SitesScreen> {
         title: const Text('Eliminar sitio'),
         content: Text('¿Eliminar el sitio ${s.idSitio}-${s.nombreSitio}?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Eliminar')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('CANCELAR')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('ELIMINAR')),
         ],
       ),
     );
@@ -96,7 +96,7 @@ class _SitesScreenState extends State<SitesScreen> {
                   TextButton.icon(
                     onPressed: holder.backToCabecera,
                     icon: const Icon(Icons.edit, size: 18),
-                    label: const Text('Editar'),
+                    label: const Text('EDITAR'),
                   ),
                 ],
               ),
@@ -187,7 +187,7 @@ class _SitesScreenState extends State<SitesScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openSitio(draft: SitioDraft.nuevo()),
         icon: const Icon(Icons.add),
-        label: const Text('Agregar sitio'),
+        label: const Text('AGREGAR SITIO'),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {

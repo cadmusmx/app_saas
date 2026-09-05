@@ -69,9 +69,9 @@ class HeaderDocumentsSection extends StatelessWidget {
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.attach_file),
                   label: Text(
-                    localPath != null
+                    (localPath != null
                         ? localPath!.split('/').last
-                        : (existingFileName.isNotEmpty ? existingFileName : 'Seleccionar archivo'),
+                        : (existingFileName.isNotEmpty ? existingFileName : 'SELECCIONAR ARCHIVO')),
                     overflow: TextOverflow.ellipsis,
                   ),
                   onPressed: () async {
@@ -99,7 +99,7 @@ class HeaderDocumentsSection extends StatelessWidget {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('CANCELAR')),
             TextButton(
               onPressed: () {
                 if (nameController.text.trim().isEmpty) {
@@ -110,7 +110,7 @@ class HeaderDocumentsSection extends StatelessWidget {
                 }
                 Navigator.pop(ctx, true);
               },
-              child: const Text('Aceptar'),
+              child: const Text('ACEPTAR'),
             ),
           ],
         ),
@@ -172,7 +172,7 @@ class HeaderDocumentsSection extends StatelessWidget {
             ),
           ),
           if (ref.isNotEmpty)
-            IconButton(tooltip: 'Ver', onPressed: () => _verArchivo(d), icon: const Icon(Icons.visibility)),
+            IconButton(tooltip: 'VER', onPressed: () => _verArchivo(d), icon: const Icon(Icons.visibility)),
           IconButton(onPressed: () => _edit(context, holder, index), icon: const Icon(Icons.edit)),
           IconButton(onPressed: () => holder.removeDocumento(index), icon: const Icon(Icons.delete)),
         ],
@@ -197,7 +197,7 @@ class HeaderDocumentsSection extends StatelessWidget {
               ),
             ),
             IconButton(
-              tooltip: 'Agregar documento',
+              tooltip: 'AGREGAR DOCUMENTO',
               icon: const Icon(Icons.add),
               onPressed: () => _add(context, holder),
             ),
